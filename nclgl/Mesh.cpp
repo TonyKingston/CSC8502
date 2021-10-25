@@ -393,6 +393,29 @@ Mesh* Mesh::GenerateTriangle() {
 	return m;
 }
 
+Mesh* Mesh::GenerateTriangleStrip() {
+	Mesh* m = new Mesh();
+	m->numVertices = 6;
+	m->vertices = new Vector3[m->numVertices];
+	m->vertices[0] = Vector3(0.0f, 0.5f, 0.0f);
+	m->vertices[1] = Vector3(0.5f, -0.5f, 0.0f);
+	m->vertices[2] = Vector3(-0.5f, -0.5f, 0.0f);
+	m->vertices[3] = Vector3(0.0f, 0.5f, 0.0f);
+	m->vertices[4] = Vector3(0.5f, 0.5f, 0.0f);
+	m->vertices[5] = Vector3(0.5f, -0.5f, 0.0f);
+
+	m->colours = new Vector4[m->numVertices];
+	m->colours[0] = Vector4(1.0f, 0.0f, 0.0f, 1.0f);
+	m->colours[1] = Vector4(0.0f, 1.0f, 0.0f, 1.0f);
+	m->colours[2] = Vector4(0.0f, 0.0f, 1.0f, 1.0f);
+	m->colours[3] = Vector4(1.0f, 0.0f, 0.0f, 1.0f);
+	m->colours[4] = Vector4(0.0f, 1.0f, 0.0f, 1.0f);
+	m->colours[5] = Vector4(0.0f, 0.0f, 1.0f, 1.0f);
+
+	m->BufferData();
+	return m;
+}
+
 int Mesh::GetIndexForJoint(const std::string& name) const {
 	for (unsigned int i = 0; i < jointNames.size(); ++i) {
 		if (jointNames[i] == name) {
