@@ -1,5 +1,8 @@
 #include "../NCLGL/window.h"
-#include "Renderer.h"
+#include "../Blank Project/Renderer.h"
+#include "../nclgl/Shader.h"
+
+//#include <ZXEmulator\Renderer.h>
 
 int main()	{
 	Window w("My First OpenGL Triangle!", 1280, 720, false);

@@ -1,5 +1,8 @@
 #include "../NCLGL/window.h"
 #include "Renderer.h"
+#include "../nclgl/Mesh.h"
+#include "../nclgl/Shader.h"
+
 
 int main()	{
 	Window w("Make your own project!", 1280, 720, false);
