@@ -46,6 +46,7 @@ int main() {
 		renderer.SetRotation(rotation);
 		renderer.SetScale(scale);
 		renderer.SetPosition(position);
+		renderer.SetFieldOfView(45.0f);
 		renderer.RenderScene();
 		renderer.SwapBuffers();
 	}

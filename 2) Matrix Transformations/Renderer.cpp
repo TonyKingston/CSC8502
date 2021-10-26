@@ -20,7 +20,7 @@ Renderer::~Renderer(void) {
 
 void Renderer::SwitchToPerspective()
 {
-	projMatrix = Matrix4::Perspective(1.0f, 10000.0f, float(width) / float(height), 45.0f);
+	projMatrix = Matrix4::Perspective(1.0f, 10000.0f, float(width) / float(height), fov);
 
 }
 
