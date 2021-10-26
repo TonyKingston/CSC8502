@@ -57,3 +57,8 @@ void Renderer::RenderScene() {
 	}
 		
 }
+
+void Renderer::UpdateScene(float dt) {
+	camera->UpdateCamera(dt);
+	viewMatrix = camera->BuildViewMatrix();
+}
