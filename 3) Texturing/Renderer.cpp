@@ -18,7 +18,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	filtering = true;
 	repeating = false;
 	init = true;
-	SwitchToOrthographic();
+	//SwitchToOrthographic();
 }
 
 Renderer::~Renderer(void) {
@@ -50,13 +50,13 @@ void Renderer::UpdateTextureMatrix(float value)
 
 void Renderer::ToggleRepeating()
 {
-	repeating != repeating;
+	repeating = !repeating;
 	SetTextureRepeating(texture, repeating);
 }
 
 void Renderer::ToggleFiltering()
 {
-	filtering != filtering;
+	filtering = !filtering;
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
 		filtering ? GL_LINEAR : GL_NEAREST);
