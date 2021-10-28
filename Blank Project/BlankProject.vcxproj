@@ -136,11 +136,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\2) Matrix Transformations\Camera.cpp" />
+    <ClCompile Include="..\2) Matrix Transformations\Renderer.cpp" />
     <ClCompile Include="BlankProject.cpp" />
-    <ClCompile Include="Renderer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Renderer.h" />
+    <ClInclude Include="..\2) Matrix Transformations\Camera.h" />
+    <ClInclude Include="..\2) Matrix Transformations\Renderer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

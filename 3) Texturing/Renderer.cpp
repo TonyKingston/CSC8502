@@ -7,7 +7,8 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 
 	if (!texture) return;
 
-	shader = new Shader("MatrixVertex.glsl", "colourFragment.glsl");
+	//shader = new Shader("MatrixVertex.glsl", "colourFragment.glsl");
+	shader = new Shader("TexturedVertex.glsl", "TexturedFragment.glsl");
 	camera = new Camera();
 
 	if (!shader->LoadSuccess()) {
@@ -35,7 +36,7 @@ void Renderer::SwitchToPerspective()
 
 void Renderer::SwitchToOrthographic()
 {
-	projMatrix = Matrix4::Orthographic(-1.0f, 10000.0f, width / 2.0f, -width/2.0f, 
+	projMatrix = Matrix4::Orthographic(-1.0f, 10000.0f, width / 2.0f, -width / 2.0f,
 		height / 2.0f, -height / 2.0f);
 }
 
@@ -59,9 +60,9 @@ void Renderer::ToggleFiltering()
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
 		filtering ? GL_LINEAR : GL_NEAREST);
-	 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-		 filtering ? GL_LINEAR : GL_NEAREST);
-	 glBindTexture(GL_TEXTURE_2D, 0);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+		filtering ? GL_LINEAR : GL_NEAREST);
+	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void Renderer::RenderScene() {
@@ -74,10 +75,10 @@ void Renderer::RenderScene() {
 	glBindTexture(GL_TEXTURE_2D, texture);
 	/*glUniformMatrix4fv(glGetUniformLocation(matrixShader->GetProgram()
 	, "projMatrix"), 1, false, projMatrix.values);
-	
-    glUniformMatrix4fv(glGetUniformLocation(matrixShader->GetProgram()
+
+	glUniformMatrix4fv(glGetUniformLocation(matrixShader->GetProgram()
 	, "viewMatrix"), 1, false, viewMatrix.values);
-	
+
 	for (int i = 0; i < 3; ++i) {
 		Vector3 tempPos = position;
 		tempPos.z += (i * 500.0f);
@@ -93,7 +94,8 @@ void Renderer::RenderScene() {
 			1, false, modelMatrix.values);
 		triangle->Draw();
 	}*/
-		
+	triangle->Draw();
+
 }
 
 void Renderer::UpdateScene(float dt) {

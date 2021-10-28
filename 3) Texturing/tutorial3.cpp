@@ -1,5 +1,5 @@
 #include "../nclGL/window.h"
-#include "Renderer.h"
+#include "../Blank Project/Renderer.h"
 
 int main() {
 	Window w("Texturing!", 1280, 720,false);	 //This is all boring win32 window creation stuff!

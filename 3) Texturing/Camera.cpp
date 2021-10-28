@@ -24,7 +24,7 @@ Camera::Camera(float pitch, float yaw, float roll, Vector3 position) {
 
 void Camera::UpdateCamera(float dt /*= 1.0f*/)
 {
-	
+
 	pitch -= (Window::GetMouse()->GetRelativePosition().y);
 	yaw -= (Window::GetMouse()->GetRelativePosition().x);
 
@@ -42,28 +42,28 @@ void Camera::UpdateCamera(float dt /*= 1.0f*/)
 
 	Vector3 forward = rotation * Vector3(0, 0, -1);
 	Vector3 right = rotation * Vector3(1, 0, 0);
-	
+
 	float speed = 30.0f * dt;
 
 	if (Window::GetKeyboard()->KeyDown(KEYBOARD_W)) {
 		position += forward * speed;
-		
+
 	}
 	if (Window::GetKeyboard()->KeyDown(KEYBOARD_S)) {
 		position -= forward * speed;
-		
+
 	}
 	if (Window::GetKeyboard()->KeyDown(KEYBOARD_A)) {
 		position -= right * speed;
-		
+
 	}
 	if (Window::GetKeyboard()->KeyDown(KEYBOARD_D)) {
 		position += right * speed;
-		
+
 	}
 	if (Window::GetKeyboard()->KeyDown(KEYBOARD_SHIFT)) {
 		position.y += speed;
-		
+
 	}
 	if (Window::GetKeyboard()->KeyDown(KEYBOARD_SPACE)) {
 		position.y -= speed;
