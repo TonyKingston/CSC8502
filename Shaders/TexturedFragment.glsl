@@ -8,5 +8,5 @@ in Vertex {
 
 out vec4 fragColour;
 void main(void) {
-  fragColour = mix(texture(diffuseTex2, IN.texCoord), texture(diffuseTex, IN.texCoord), 0.9);
+  fragColour = mix(texture(diffuseTex2, IN.texCoord), texture(diffuseTex, IN.texCoord), 1.0);
 }

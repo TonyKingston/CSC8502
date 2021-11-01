@@ -72,10 +72,10 @@ void Renderer::RenderScene() {
 	glUniform1i(glGetUniformLocation(shader->GetProgram(), "diffuseTex"), 0);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
-	/*glUniformMatrix4fv(glGetUniformLocation(matrixShader->GetProgram()
+	glUniformMatrix4fv(glGetUniformLocation(shader->GetProgram()
 	, "projMatrix"), 1, false, projMatrix.values);
 	
-    glUniformMatrix4fv(glGetUniformLocation(matrixShader->GetProgram()
+    glUniformMatrix4fv(glGetUniformLocation(shader->GetProgram()
 	, "viewMatrix"), 1, false, viewMatrix.values);
 	
 	for (int i = 0; i < 3; ++i) {
@@ -89,10 +89,10 @@ void Renderer::RenderScene() {
 			Matrix4::Scale(Vector3(scale, scale, scale));
 
 		glUniformMatrix4fv(glGetUniformLocation(
-			matrixShader->GetProgram(), "modelMatrix"),
+			shader->GetProgram(), "modelMatrix"),
 			1, false, modelMatrix.values);
 		triangle->Draw();
-	}*/
+	}
 		
 }
 

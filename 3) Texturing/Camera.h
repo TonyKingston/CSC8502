@@ -23,7 +23,7 @@ private:
 	float yaw;
 	float pitch;
 	float roll;
-	float cameraSpeed = 30.0f;
+	float cameraSpeed = 2.0f;
 	Vector3 position;
 };
 

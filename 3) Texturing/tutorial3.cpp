@@ -13,6 +13,9 @@ int main() {
 	}
 
 	float rotate = 0.0f;
+	float scale = 100.0f;
+	float rotation = 0.0f;
+	Vector3 position(0, 0, -1500.0f);
 	while(w.UpdateWindow() && !Window::GetKeyboard()->KeyDown(KEYBOARD_ESCAPE)){
 		if(Window::GetKeyboard()->KeyDown(KEYBOARD_LEFT) ) {
 			--rotate;
@@ -31,9 +34,13 @@ int main() {
 		if(Window::GetKeyboard()->KeyTriggered(KEYBOARD_2) ) {
 			renderer.ToggleRepeating();
 		}
-
-		renderer.RenderScene();
+		renderer.SetRotation(rotation);
+		renderer.SetScale(scale);
+		renderer.SetPosition(position);
+		renderer.SetFieldOfView(45.0f);
 		renderer.SwapBuffers();
+		renderer.UpdateScene(w.GetTimer()->GetTimeDeltaSeconds());
+		renderer.RenderScene();
 		if (Window::GetKeyboard()->KeyDown(KEYBOARD_F5)) {
 			Shader::ReloadAllShaders();
 		}

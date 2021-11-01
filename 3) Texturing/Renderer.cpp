@@ -3,7 +3,8 @@
 Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	triangle = Mesh::GenerateTriangle();
 
-	texture = SOIL_load_OGL_texture(TEXTUREDIR"brick.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, 0);
+	texture = SOIL_load_OGL_texture(TEXTUREDIR"brick.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS
+	);
 	texture2 = SOIL_load_OGL_texture(TEXTUREDIR"stainedglass.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, 0);
 
 	if (!texture) return;
@@ -20,6 +21,8 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	repeating = false;
 	init = true;
 	//SwitchToOrthographic();
+	//fov = 45.0f;
+	//SwitchToPerspective();
 }
 
 Renderer::~Renderer(void) {
@@ -27,6 +30,7 @@ Renderer::~Renderer(void) {
 	delete shader;
 	delete camera;
 	glDeleteTextures(1, &texture);
+	glDeleteTextures(1, &texture2);
 }
 
 void Renderer::SwitchToPerspective()
@@ -77,13 +81,13 @@ void Renderer::RenderScene() {
 	glBindTexture(GL_TEXTURE_2D, texture);
 	glActiveTexture(GL_TEXTURE0 + 1);
 	glBindTexture(GL_TEXTURE_2D, texture2);
-	/*glUniformMatrix4fv(glGetUniformLocation(matrixShader->GetProgram()
+	glUniformMatrix4fv(glGetUniformLocation(shader->GetProgram()
 	, "projMatrix"), 1, false, projMatrix.values);
 
-	glUniformMatrix4fv(glGetUniformLocation(matrixShader->GetProgram()
+	glUniformMatrix4fv(glGetUniformLocation(shader->GetProgram()
 	, "viewMatrix"), 1, false, viewMatrix.values);
 
-	for (int i = 0; i < 3; ++i) {
+	for (int i = 0; i < 1; ++i) {
 		Vector3 tempPos = position;
 		tempPos.z += (i * 500.0f);
 		tempPos.x -= (i * 100.0f);
@@ -94,11 +98,11 @@ void Renderer::RenderScene() {
 			Matrix4::Scale(Vector3(scale, scale, scale));
 
 		glUniformMatrix4fv(glGetUniformLocation(
-			matrixShader->GetProgram(), "modelMatrix"),
+			shader->GetProgram(), "modelMatrix"),
 			1, false, modelMatrix.values);
 		triangle->Draw();
-	}*/
-	triangle->Draw();
+	}
+	//triangle->Draw();
 
 }
 
