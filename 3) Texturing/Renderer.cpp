@@ -4,6 +4,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	triangle = Mesh::GenerateTriangle();
 
 	texture = SOIL_load_OGL_texture(TEXTUREDIR"brick.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, 0);
+	texture2 = SOIL_load_OGL_texture(TEXTUREDIR"stainedglass.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, 0);
 
 	if (!texture) return;
 
@@ -71,8 +72,11 @@ void Renderer::RenderScene() {
 	UpdateShaderMatrices();
 
 	glUniform1i(glGetUniformLocation(shader->GetProgram(), "diffuseTex"), 0);
+	glUniform1i(glGetUniformLocation(shader->GetProgram(), "diffuseTex2"), 1);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
+	glActiveTexture(GL_TEXTURE0 + 1);
+	glBindTexture(GL_TEXTURE_2D, texture2);
 	/*glUniformMatrix4fv(glGetUniformLocation(matrixShader->GetProgram()
 	, "projMatrix"), 1, false, projMatrix.values);
 

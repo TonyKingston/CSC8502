@@ -27,6 +27,7 @@ protected:
 	Shader * shader;
 	Camera* camera;
 	GLuint texture;
+	GLuint texture2;
 	bool filtering;
 	bool repeating;
 	float scale;
