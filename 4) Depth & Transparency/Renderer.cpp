@@ -8,7 +8,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	);
 	textures[1] = SOIL_load_OGL_texture(TEXTUREDIR"stainedglass.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, 0);
 
-	if (!textures[0] || textures[1]) return;
+	if (!textures[0] || !textures[1]) return;
 
 	positions[0] = Vector3(0, 0, -5);
 	positions[1] = Vector3(0, 0, -5);
@@ -58,25 +58,41 @@ void Renderer::RenderScene() {
 
 void Renderer::ToggleObject()
 {
-
+	modifyObject = !modifyObject;
 }
 
 void Renderer::ToggleDepth()
 {
-
+	usingDepth = !usingDepth;
+	usingDepth ? glEnable(GL_DEPTH_TEST) : glDisable(GL_DEPTH_TEST);
 }
 
 void Renderer::ToggleAlphaBlend()
 {
-
+	usingAlpha = !usingAlpha;
+	usingAlpha ? glEnable(GL_BLEND) : glDisable(GL_BLEND);
 }
 
 void Renderer::ToggleBlendMode()
 {
-
+	blendMode = (blendMode + 1) % 4;
+	switch (blendMode) {
+	case(0):
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+		break;
+	case(1):
+		glBlendFunc(GL_SRC_COLOR, GL_ONE_MINUS_SRC_COLOR);
+		break;
+	case(2):
+		glBlendFunc(GL_ONE, GL_ZERO);
+		break;
+	case(3):
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+		break;
+	}
 }
 
 void Renderer::MoveObject(float by)
 {
-
+	positions[(int)modifyObject].z += by;
 }
