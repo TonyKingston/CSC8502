@@ -1,11 +1,12 @@
 #include "CubeRobot.h"
+#include <random>
 
 CubeRobot::CubeRobot(Mesh* cube) {
-	// SetMesh ( cube ); // Uncomment if you want a local origin marker !
-
+	//SetMesh ( cube ); // Uncomment if you want a local origin marker !
+	int trans = rand() % 500 + 10;
 	SceneNode* body = new SceneNode(cube, Vector4(1, 0, 0, 1)); // Red !
 	body->SetModelScale(Vector3(10, 15, 5));
-	body->SetTransform(Matrix4::Translation(Vector3(0, 35, 0)));
+	body->SetTransform(Matrix4::Translation(Vector3(trans, 35, 0)));
 	AddChild(body);
 
 	head = new SceneNode(cube, Vector4(0, 1, 0, 1)); // Green !
@@ -23,6 +24,8 @@ CubeRobot::CubeRobot(Mesh* cube) {
 	rightArm->SetTransform(Matrix4::Translation(Vector3(12, 30, -1)));
 	body->AddChild(rightArm);
 
+	SceneNode* hips = new SceneNode(NULL, Vector4(0, 0, 0, 0));
+
 	SceneNode* leftLeg = new SceneNode(cube, Vector4(0, 0, 1, 1)); // Blue !
 	leftLeg->SetModelScale(Vector3(3, -17.5, 3));
 	leftLeg->SetTransform(Matrix4::Translation(Vector3(-8, 0, 0)));
@@ -33,4 +36,18 @@ CubeRobot::CubeRobot(Mesh* cube) {
 	rightLeg->SetTransform(Matrix4::Translation(Vector3(8, 0, 0)));
 	body->AddChild(rightLeg);
 
+}
+
+void CubeRobot::Update(float dt) {
+	transform = transform * Matrix4::Rotation(30.0f * dt, Vector3(0, 1, 0));
+
+	head->SetTransform(head->GetTransform() * Matrix4::Rotation(-30.0f * dt, Vector3(0, 1, 0)));
+	leftArm->SetTransform(leftArm->GetTransform() *
+	  Matrix4::Rotation(-30.0f * dt, Vector3(1, 0, 0)));
+	
+	rightArm->SetTransform(rightArm->GetTransform() *
+	  Matrix4::Rotation(30.0f * dt, Vector3(1, 0, 0)));
+	
+	SceneNode::Update(dt);
+	
 }

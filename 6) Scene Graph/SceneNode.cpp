@@ -20,6 +20,11 @@ void SceneNode::AddChild(SceneNode* s)
 	s->parent = this;
 }
 
+void SceneNode::RemoveChild(int index)
+{
+	delete children[index];
+}
+
 void SceneNode::Update(float dt)
 {
 	if (parent) {
@@ -35,5 +40,5 @@ void SceneNode::Update(float dt)
 
 void SceneNode::Draw(const OGLRenderer& r)
 {
-	if (mesh) { mesh->Draw();  }
+	if (mesh) { mesh->Draw(); }
 }

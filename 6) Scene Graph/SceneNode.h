@@ -3,6 +3,7 @@
 #include "../nclgl/Vector3.h"
 #include "../nclgl/Vector4.h"
 #include "../nclgl/Mesh.h"
+#include "../nclgl/Shader.h"
 #include <vector>
 
 class SceneNode
@@ -23,8 +24,12 @@ public:
 	
 	Mesh * GetMesh() const { return mesh; }
 	void SetMesh(Mesh * m) { mesh = m; }
+
+	Shader* GetShader() const { return shader; }
+	void SetShader(Shader* s) { shader = s; }
 	
 	void AddChild(SceneNode * s);
+	void RemoveChild(int index);
 	virtual void Update(float dt);
 	virtual void Draw(const OGLRenderer & r);
 	
@@ -38,11 +43,12 @@ public:
 protected:
 	SceneNode * parent;
 	Mesh * mesh;
+	Shader* shader;
 	Matrix4 worldTransform;
 	Matrix4 transform;
 	Vector3 modelScale;
 	Vector4 colour;
-	std::vector < SceneNode* > children;
+	std::vector <SceneNode*> children;
 
 };
 

@@ -4,9 +4,13 @@
     <ClCompile Include="Tutorial6.cpp" />
     <ClCompile Include="SceneNode.cpp" />
     <ClCompile Include="CubeRobot.cpp" />
+    <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="Camera.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="SceneNode.h" />
     <ClInclude Include="CubeRobot.h" />
+    <ClInclude Include="Renderer.h" />
+    <ClInclude Include="Camera.h" />
   </ItemGroup>
 </Project>
