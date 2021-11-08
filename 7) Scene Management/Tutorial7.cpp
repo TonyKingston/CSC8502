@@ -18,8 +18,8 @@ int main() {
 	while(w.UpdateWindow() && !Window::GetKeyboard()->KeyDown(KEYBOARD_ESCAPE)){
 		float timestep = w.GetTimer()->GetTimeDeltaSeconds();
 		renderer.UpdateScene(timestep);
-		renderer.RenderScene();
 		renderer.SwapBuffers();
+		renderer.RenderScene();
 		if (Window::GetKeyboard()->KeyDown(KEYBOARD_F5)) {
 			Shader::ReloadAllShaders();
 		}

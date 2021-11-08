@@ -2,8 +2,8 @@
 
 #include "../nclgl/OGLRenderer.h"
 #include "Camera.h"
-#include "SceneNode.h"
-#include "CubeRobot.h"
+#include "../nclgl/SceneNode.h"
+#include "../nclgl/CubeRobot.h"
 
 class Renderer : public OGLRenderer {
 public:
