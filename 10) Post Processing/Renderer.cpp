@@ -1,13 +1,13 @@
 #include "Renderer.h"
 
-const int POST_PASSES = 0;
+const int POST_PASSES = 1;
 Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	camera = new Camera(-25.0f, 225.0f,
 		Vector3(-150.0f, 250.0f, -150.0f));
 	quad = Mesh::GenerateQuad();
 
-	heightMap = new HeightMap(TEXTUREDIR "noise.png");
-	heightTexture = SOIL_load_OGL_texture(TEXTUREDIR "Barren Reds.JPG",
+	heightMap = new HeightMap(TEXTUREDIR"noise.png");
+	heightTexture = SOIL_load_OGL_texture(TEXTUREDIR"Barren Reds.JPG",
 		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
 
 	sceneShader = new Shader("TexturedVertex.glsl",
@@ -104,19 +104,18 @@ void Renderer::PresentScene()
 
 void Renderer::DrawPostProcess()
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, bufferFBO);
-	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT |
-		 GL_STENCIL_BUFFER_BIT);
-	BindShader(sceneShader);
-	projMatrix = Matrix4::Perspective(1.0f, 10000.0f,
-		(float)width / (float)height, 45.0f);
+	glBindFramebuffer(GL_FRAMEBUFFER, processFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+	GL_TEXTURE_2D, bufferColourTex[1], 0);
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	
+	BindShader(processShader);
+	modelMatrix.ToIdentity();
+	viewMatrix.ToIdentity();
+	projMatrix.ToIdentity();
 	UpdateShaderMatrices();
-	glUniform1i(glGetUniformLocation(
-		sceneShader->GetProgram(), "diffuseTex"), 0);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, heightTexture);
-	heightMap->Draw();
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	
+	glDisable(GL_DEPTH_TEST);
 
 	glActiveTexture(GL_TEXTURE0);
 	glUniform1i(glGetUniformLocation(
