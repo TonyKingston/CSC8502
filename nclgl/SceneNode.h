@@ -37,10 +37,8 @@ public:
 	void SetTexture(GLuint tex) { texture = tex; }
 	GLuint GetTexture() const { return texture; }
 	
-		static bool CompareByCameraDistance(SceneNode * a, SceneNode * b) {
-		return (a->distanceFromCamera <
-			b->distanceFromCamera) ? true : false;
-		
+	static bool CompareByCameraDistance(SceneNode * a, SceneNode * b) {
+		return (a->distanceFromCamera < b->distanceFromCamera) ? true : false;
 	}
 
 	void AddChild(SceneNode* s);
