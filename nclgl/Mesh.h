@@ -56,6 +56,13 @@ public:
 	static Mesh* GenerateTriangle();
 	static Mesh* GenerateTriangleStrip();
 	static Mesh* GenerateQuad();
+	
+	void GenerateNormals();
+	void GenerateTangents();
+	Vector4 GenerateTangent(int a, int b, int c);
+	bool GetVertexIndicesForTri(unsigned int i, unsigned int& a, unsigned int& b,
+		unsigned int& c) const;
+
 
 	unsigned int GetTriCount() const {
 		int primCount = indices ? numIndices : numVertices;

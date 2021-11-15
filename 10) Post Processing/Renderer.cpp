@@ -84,7 +84,9 @@ void Renderer::UpdateScene(float dt) {
 void Renderer::RenderScene() {
 	DrawScene();
 	DrawPostProcess();
-	PresentScene();}
+	PresentScene();
+}
+
 
 void Renderer::PresentScene()
 {

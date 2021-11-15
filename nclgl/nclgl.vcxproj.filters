@@ -38,6 +38,7 @@
     <ClCompile Include="Frustum.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="HeightMap.cpp" />
+    <ClCompile Include="Light.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common.h" />
@@ -87,6 +88,7 @@
     <ClInclude Include="Frustum.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="HeightMap.h" />
+    <ClInclude Include="Light.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="GLAD">

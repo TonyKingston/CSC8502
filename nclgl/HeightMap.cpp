@@ -50,6 +50,8 @@ HeightMap::HeightMap(const std::string& name)
 		}
 		
 	}
+	GenerateNormals();
+	GenerateTangents();
 	BufferData();
 	
 	heightmapSize.x = vertexScale.x * (iWidth - 1);

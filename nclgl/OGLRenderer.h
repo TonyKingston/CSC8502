@@ -35,6 +35,7 @@ _-_-_-_-_-_-_-""  ""
 #include "Window.h"
 #include "Shader.h"
 #include "Mesh.h"
+#include "Light.h"
 
 using std::vector;
 
@@ -71,6 +72,7 @@ protected:
 	}
 
 	void SetTextureRepeating(GLuint target, bool state);
+	void SetShaderLight(const Light& l);
 
 	Matrix4 projMatrix;		//Projection matrix
 	Matrix4 modelMatrix;	//Model matrix. NOT MODELVIEW
