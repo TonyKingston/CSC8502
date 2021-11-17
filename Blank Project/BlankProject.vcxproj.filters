@@ -17,15 +17,9 @@
     <ClCompile Include="..\2) Matrix Transformations\Renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\2) Matrix Transformations\Camera.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\2) Matrix Transformations\Renderer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\2) Matrix Transformations\Camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

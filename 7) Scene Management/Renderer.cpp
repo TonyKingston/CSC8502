@@ -16,7 +16,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 		return;
 	}
 
-	//camera->SetPosition(Vector3(0, 30, 175));
+	camera->SetPosition(Vector3(0, 100, 500));
 
 	root = new SceneNode();
 	//root->AddChild(new CubeRobot(cube));
@@ -56,7 +56,7 @@ Renderer ::~Renderer(void) {
 void Renderer::UpdateScene(float dt) {
 	camera->UpdateCamera(dt);
 	viewMatrix = camera->BuildViewMatrix();
-	frameFrustum.FromMatrix(projMatrix);
+	frameFrustum.FromMatrix(projMatrix*viewMatrix);
 	root->Update(dt);
 
 }

@@ -43,22 +43,21 @@ void Camera::UpdateCamera(float dt /*= 1.0f*/)
 	Vector3 forward = rotation * Vector3(0, 0, -1);
 	Vector3 right = rotation * Vector3(1, 0, 0);
 
-	float speed = 30.0f * dt;
+	float speed = 100.0f * dt;
 
 	if (Window::GetKeyboard()->KeyDown(KEYBOARD_W)) {
-		position += forward * speed;
-
+		position += Matrix4::Rotation(yaw, Vector3(0, 1, 0)) * Vector3(0, 0, -1) * speed;
 	}
 	if (Window::GetKeyboard()->KeyDown(KEYBOARD_S)) {
-		position -= forward * speed;
+		position -= Matrix4::Rotation(yaw, Vector3(0, 1, 0)) * Vector3(0, 0, -1) * speed;
 
 	}
 	if (Window::GetKeyboard()->KeyDown(KEYBOARD_A)) {
-		position -= right * speed;
+		position += Matrix4::Rotation(yaw, Vector3(0, 1, 0)) * Vector3(-1, 0, 0) * speed;
 
 	}
 	if (Window::GetKeyboard()->KeyDown(KEYBOARD_D)) {
-		position += right * speed;
+		position -= Matrix4::Rotation(yaw, Vector3(0, 1, 0)) * Vector3(-1, 0, 0) * speed;
 
 	}
 	if (Window::GetKeyboard()->KeyDown(KEYBOARD_SHIFT)) {
