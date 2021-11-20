@@ -86,6 +86,7 @@ void Renderer::RenderScene() {
 
 	glUniformMatrix4fv(glGetUniformLocation(shader->GetProgram()
 	, "viewMatrix"), 1, false, viewMatrix.values);
+	
 
 	for (int i = 0; i < 1; ++i) {
 		Vector3 tempPos = position;

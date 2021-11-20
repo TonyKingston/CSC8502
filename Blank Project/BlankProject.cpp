@@ -2,6 +2,8 @@
 #include "Renderer.h"
 #include "../nclgl/Mesh.h"
 #include "../nclgl/Shader.h"
+#include "Renderer.h"
+
 
 
 int main()	{

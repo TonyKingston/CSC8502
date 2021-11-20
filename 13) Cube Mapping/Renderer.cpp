@@ -1,9 +1,9 @@
 #include "Renderer.h"
 
 Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
-	heightMap = new HeightMap(TEXTUREDIR"noise.png");
+	heightMap = new HeightMap(TEXTUREDIR"islandHeightMap.png");
 	quad = Mesh::GenerateQuad();
-	Vector3 testV = Vector3(16.0f, 0.0f, 16.0f);
+
 	camera = new Camera(-45, 0.0f, heightMap->GetHeightmapSize() * Vector3(0.5f, 5.0f, 0.5f));
 
 	Vector3 dimensions = heightMap->GetHeightmapSize();
@@ -105,7 +105,7 @@ void Renderer::DrawHeightMap()
 		lightShader->GetProgram(), "diffuseTex"), 0);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, earthTex);
-	glUniform1i(glGetUniformLocation(
+	glUniform1i(glGetUniformLocation(	
 			lightShader->GetProgram(), "bumpTex"), 1);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, earthBump);
@@ -114,14 +114,15 @@ void Renderer::DrawHeightMap()
 	
 	UpdateShaderMatrices();
 	
-	heightMap->Draw();
+	heightMap->Draw();
+
 }
 
 void Renderer::DrawWater()
 {
 	BindShader(reflectShader);
 	glUniform3fv(glGetUniformLocation(lightShader->GetProgram(),
-		"cameraPos"), 1, (float*)& camera->GetPosition());
+		"cameraPos"), 1, (float*)&camera->GetPosition());
 
 	glUniform1i(glGetUniformLocation(
 		reflectShader->GetProgram(), "diffuseTex"), 0);
@@ -144,7 +145,7 @@ void Renderer::DrawWater()
 		Matrix4::Rotation(waterRotate, Vector3(0, 0, 1));
 
 	UpdateShaderMatrices();
-	// SetShaderLight (* light ); // No lighting in this shader !
+	//SetShaderLight (* light ); // No lighting in this shader !
 	quad->Draw();
 }
 

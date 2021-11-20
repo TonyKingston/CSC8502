@@ -3,26 +3,30 @@
 
 Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	triangle = Mesh::GenerateTriangle();
+	quad = Mesh::GenerateQuad();
 
 	texture = SOIL_load_OGL_texture(TEXTUREDIR"brick.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, 0);
 
 	if (!texture) return;
 
-	shader = new Shader("MatrixVertex.glsl", "colourFragment.glsl");
+	//shader = new Shader("MatrixVertex.glsl", "colourFragment.glsl");
+	shader = new Shader("waterVertex.glsl", "waterFragment.glsl");
 	camera = new Camera();
+	camera->SetPosition(Vector3(0, 100, 175));
+
+	projMatrix = Matrix4::Perspective(1.0f, 15000.0f,
+		(float)width / (float)height, 45.0f);
 
 	if (!shader->LoadSuccess()) {
 		return;
 	}
 
-	filtering = true;
-	repeating = false;
 	init = true;
-	SwitchToOrthographic();
 }
 
 Renderer::~Renderer(void) {
 	delete triangle;
+	delete quad;
 	delete shader;
 	delete camera;
 	glDeleteTextures(1, &texture);
@@ -65,15 +69,21 @@ void Renderer::RenderScene() {
 	BindShader(shader);
 	UpdateShaderMatrices();
 
-	glUniform1i(glGetUniformLocation(shader->GetProgram(), "diffuseTex"), 0);
+	/*glUniform1i(glGetUniformLocation(shader->GetProgram(), "diffuseTex"), 0);
 	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture);
+	glBindTexture(GL_TEXTURE_2D, texture);*/
 	glUniformMatrix4fv(glGetUniformLocation(shader->GetProgram()
 	, "projMatrix"), 1, false, projMatrix.values);
 	
     glUniformMatrix4fv(glGetUniformLocation(shader->GetProgram()
 	, "viewMatrix"), 1, false, viewMatrix.values);
-	
+
+	modelMatrix = Matrix4::Translation(Vector3(0, 0, 50));
+	glUniformMatrix4fv(glGetUniformLocation(
+		shader->GetProgram(), "modelMatrix"),
+		1, false, modelMatrix.values);
+
+	quad->Draw();
 }
 
 void Renderer::UpdateScene(float dt) {

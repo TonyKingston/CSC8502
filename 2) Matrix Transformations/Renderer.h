@@ -24,14 +24,19 @@ public:
 	void ClearNodeLists();
 	void DrawNodes();
 	void DrawNode(SceneNode* n);
+
+	void DrawSkybox();
 	
 protected:
 	Mesh * triangle;
+	Mesh* quad;
 	Shader * shader;
+	Shader* skyboxShader;
 	Camera* camera;
 	GLuint texture;
 	bool filtering;
 	bool repeating;
+	float fov;
 	Vector3 position;
 	Frustum frameFrustum;
 

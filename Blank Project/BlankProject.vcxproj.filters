@@ -14,12 +14,18 @@
     <ClCompile Include="BlankProject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\2) Matrix Transformations\Renderer.cpp">
+    <ClCompile Include="Renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="WaterFBO.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\2) Matrix Transformations\Renderer.h">
+    <ClInclude Include="Renderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WaterFBO.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

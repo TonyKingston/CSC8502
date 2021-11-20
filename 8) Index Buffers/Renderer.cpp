@@ -22,6 +22,8 @@ Renderer::Renderer(Window & parent) : OGLRenderer(parent) {
 	SetTextureRepeating(terrainTex, true);
 	projMatrix = Matrix4::Perspective(1.0f, 10000.0f,
 			(float)width / (float)height, 45.0f);
+
+
 	
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
