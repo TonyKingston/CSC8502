@@ -1,7 +1,7 @@
 #include "Renderer.h"
 
 Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
-	heightMap = new HeightMap(TEXTUREDIR"islandHeightMap.png");
+	heightMap = new HeightMap(TEXTUREDIR"island.png");
 	quad = Mesh::GenerateQuad();
 
 	camera = new Camera(-45, 0.0f, heightMap->GetHeightmapSize() * Vector3(0.5f, 5.0f, 0.5f));
@@ -111,6 +111,8 @@ void Renderer::DrawHeightMap()
 	glBindTexture(GL_TEXTURE_2D, earthBump);
 	modelMatrix.ToIdentity(); // New !
 	textureMatrix.ToIdentity(); // New !
+
+	//modelMatrix = modelMatrix * Matrix4::Scale(Vector3(2,1,1));
 	
 	UpdateShaderMatrices();
 	

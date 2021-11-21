@@ -3,26 +3,47 @@
 
 Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
     //triangle = Mesh::GenerateTriangle();
+	heightMap = new HeightMap(TEXTUREDIR"oblivionResize.png");
 	quad = Mesh::GenerateQuad();
 
-	GLuint reflect = SOIL_load_OGL_texture(TEXTUREDIR"brick.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, 0);
-	GLuint refract = SOIL_load_OGL_texture(TEXTUREDIR"water.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, 0);
+	//GLuint reflect = SOIL_load_OGL_texture(TEXTUREDIR"brick.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, 0);
+	//GLuint refract = SOIL_load_OGL_texture(TEXTUREDIR"water.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, 0);
 
-	if (!texture) return;
+	skybox = SOIL_load_OGL_cubemap(TEXTUREDIR"rusted_west.jpg", TEXTUREDIR"rusted_east.jpg",
+		TEXTUREDIR"rusted_up.jpg", TEXTUREDIR"rusted_down.jpg",
+		TEXTUREDIR"rusted_south.jpg", TEXTUREDIR"rusted_north.jpg",
+		SOIL_LOAD_RGB, SOIL_CREATE_NEW_ID, 0);
+
+	terrainTex = SOIL_load_OGL_texture(TEXTUREDIR "sand_Diffuse.tga",
+		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+
+	font = SOIL_load_OGL_texture(TEXTUREDIR"tahoma.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_COMPRESS_TO_DXT);
+
+	//if (!reflect || !refract || !skybox) return;
 
 	shader = new Shader("MatrixVertex.glsl", "colourFragment.glsl");
+	terrainShader = new Shader("TexturedVertex.glsl ", "TexturedFragment.glsl");
+	skyboxShader = new Shader("skyboxVertex.glsl ", "skyboxFragment.glsl");
 	//shader = new Shader("waterVertex.glsl", "waterFragment.glsl");
+
 	camera = new Camera();
-	camera->SetPosition(Vector3(0, 5, 20));
+	Vector3 dimensions = heightMap->GetHeightmapSize();
+	camera->SetPosition(dimensions * Vector3(0.5, 2, 0.5));
 
 	projMatrix = Matrix4::Perspective(1.0f, 15000.0f,
 		(float)width / (float)height, 45.0f);
 
-	if (!shader->LoadSuccess()) {
+	if (!shader->LoadSuccess() || !terrainShader->LoadSuccess() || !skyboxShader->LoadSuccess()) {
 		return;
 	}
+	SetTextureRepeating(terrainTex, true);
 
-	waterBuffer = new WaterFBO(reflect, refract);
+	//waterBuffer = new WaterFBO(reflect, refract);
+
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
+//	glEnable(GL_CULL_FACE);
+	//glCullFace(GL_BACK);
 
 	init = true;
 }
@@ -31,8 +52,12 @@ Renderer::~Renderer(void) {
 	delete triangle;
 	delete quad;
 	delete shader;
+	delete skyboxShader;
 	delete camera;
 	glDeleteTextures(1, &texture);
+	glDeleteTextures(1, &skybox);
+	glDeleteTextures(1, &terrainTex);
+	glDeleteTextures(1, &font);
 }
 
 void Renderer::SwitchToPerspective()
@@ -69,14 +94,10 @@ void Renderer::ToggleFiltering()
 
 void Renderer::RenderScene() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	BindShader(shader);
-	UpdateShaderMatrices();
-
-	Matrix4 model = Matrix4::Translation(Vector3(0,0,-5)) * Matrix4::Scale(Vector3(10,10,10));
-	glUniformMatrix4fv(
-		glGetUniformLocation(shader->GetProgram(),
-			"modelMatrix"), 1, false, model.values);
-	quad->Draw();
+	DrawSkybox();
+	DrawHeightMap();
+	DrawWater();
+	
 }
 
 void Renderer::UpdateScene(float dt) {
@@ -85,10 +106,49 @@ void Renderer::UpdateScene(float dt) {
 }
 
 void Renderer::DrawWater() {
-	modelMatrix.ToIdentity();
+	/*modelMatrix.ToIdentity();
 	viewMatrix.ToIdentity();
 	projMatrix.ToIdentity();
+	UpdateShaderMatrices();*/
+	BindShader(shader);
+	
+
+	Vector3 hSize = heightMap->GetHeightmapSize();
+
+	/*modelMatrix =
+		Matrix4::Translation(hSize * 0.5f) *
+		Matrix4::Scale(hSize * 0.5f) *
+		Matrix4::Rotation(90, Vector3(1, 0, 0));*/
+
 	UpdateShaderMatrices();
+
+	//Matrix4 model = Matrix4::Translation(Vector3(0, 0, -5)) * Matrix4::Scale(Vector3(10, 10, 10));
+	Matrix4 model = Matrix4::Translation(Vector3(hSize.x * 0.5, 25, hSize.z * 0.5 )) * Matrix4::Scale(hSize * 0.5f) * Matrix4::Rotation(90, Vector3(1, 0, 0));
+	glUniformMatrix4fv(
+		glGetUniformLocation(shader->GetProgram(),
+			"modelMatrix"), 1, false, model.values);
+	quad->Draw();
+}
+
+void Renderer::DrawSkybox() {
+	glDepthMask(GL_FALSE);
+	BindShader(skyboxShader);
+	//glBindTexture(GL_TEXTURE_CUBE_MAP, skybox);
+	UpdateShaderMatrices();
+	quad->Draw();
+	glDepthMask(GL_TRUE);
+}
+
+void Renderer::DrawHeightMap() {
+	BindShader(terrainShader);
+	glUniform1i(glGetUniformLocation(shader->GetProgram(),
+		"diffuseTex"), 0);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, terrainTex);
+	//modelMatrix.ToIdentity(); 
+	//textureMatrix.ToIdentity();
+	UpdateShaderMatrices();
+	heightMap->Draw();
 }
 
 void Renderer::BuildNodeLists(SceneNode* from)

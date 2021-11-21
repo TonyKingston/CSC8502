@@ -4,6 +4,7 @@
 #include "../nclgl/Mesh.h"
 #include "../nclgl/SceneNode.h"
 #include "../nclgl/Frustum.h"
+#include "../nclgl/HeightMap.h"
 #include "WaterFBO.h"
 
 class Renderer : public OGLRenderer {
@@ -28,6 +29,7 @@ public:
 
 	void DrawSkybox();
 	void DrawWater();
+	void DrawHeightMap();
 
 	int CreateFrameBuffer();
 
@@ -36,14 +38,19 @@ protected:
 	Mesh* quad;
 	Shader* shader;
 	Shader* skyboxShader;
+	Shader* terrainShader;
 	Camera* camera;
 	GLuint texture;
+	GLuint terrainTex;
+	GLuint skybox;
+	GLuint font;
 	bool filtering;
 	bool repeating;
 	float fov;
 	Vector3 position;
 	Frustum frameFrustum;
 	WaterFBO* waterBuffer;
+	HeightMap* heightMap;
 
 	vector<SceneNode*> transparentNodeList;
 	vector<SceneNode*> nodeList;
