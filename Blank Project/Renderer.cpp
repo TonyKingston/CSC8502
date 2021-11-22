@@ -21,6 +21,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	tree = Mesh::LoadFromMeshFile("rock2.msh");
 	material = new MeshMaterial("rock2.mat");
 	std::cout << tree->GetSubMeshCount() << std::endl;
+	vector <GLuint>* matTextures = new vector<GLuint>(0);
 	for (int i = 0; i < tree->GetSubMeshCount(); ++i) {
 		const MeshMaterialEntry* matEntry =
 			material->GetMaterialForLayer(i);
@@ -30,7 +31,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 		string path = TEXTUREDIR + *filename;
 		GLuint texID = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
 			SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
-		matTextures.emplace_back(texID);
+		matTextures->emplace_back(texID);
 	}
 	//if (!reflect || !refract || !skybox) return;
 
@@ -48,9 +49,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	SceneNode* s = new SceneNode();
 	s->SetMesh(tree);
 	s->SetMeshMaterial(material);
-	for (auto t : matTextures) {
-		s->AddTexture(t);
-	}
+	s->SetTextures(matTextures);
 	s->SetShader(terrainShader);
 	root->AddChild(s);
 
@@ -126,10 +125,9 @@ void Renderer::RenderScene() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	//DrawSkybox();
 	//DrawHeightMap();
-	// DrawWater();
-	BindShader(terrainShader);
-	glUniform1i(glGetUniformLocation(terrainShader->GetProgram(),
-		"diffuseTex"), 0);
+	//DrawWater();
+	//BindShader(terrainShader);
+	
 
 	UpdateShaderMatrices();
 	/*for (int i = 0; i < tree->GetSubMeshCount(); ++i) {
@@ -144,6 +142,8 @@ void Renderer::RenderScene() {
 void Renderer::UpdateScene(float dt) {
 	camera->UpdateCamera(dt);
 	viewMatrix = camera->BuildViewMatrix();
+	frameFrustum.FromMatrix(projMatrix * viewMatrix);
+	root->Update(dt);
 }
 
 void Renderer::DrawWater() {
@@ -164,10 +164,10 @@ void Renderer::DrawWater() {
 	UpdateShaderMatrices();
 
 	//Matrix4 model = Matrix4::Translation(Vector3(0, 0, -5)) * Matrix4::Scale(Vector3(10, 10, 10));
-/*	Matrix4 model = Matrix4::Translation(Vector3(hSize.x * 0.5, 25, hSize.z * 0.5 )) * Matrix4::Scale(hSize * 0.5f) * Matrix4::Rotation(90, Vector3(1, 0, 0));
+	Matrix4 model = Matrix4::Translation(Vector3(hSize.x * 0.5, 25, hSize.z * 0.5 )) * Matrix4::Scale(hSize * 0.5f) * Matrix4::Rotation(90, Vector3(1, 0, 0));
 	glUniformMatrix4fv(
 		glGetUniformLocation(shader->GetProgram(),
-			"modelMatrix"), 1, false, model.values);*/
+			"modelMatrix"), 1, false, model.values);
 	quad->Draw();
 }
 
@@ -237,20 +237,24 @@ void Renderer::DrawNodes() {
 
 void Renderer::DrawNode(SceneNode* n) {
 	if (n->GetMesh()) {
+		Shader* currentShader = n->GetShader();
+		BindShader(currentShader);
+		glUniform1i(glGetUniformLocation(currentShader->GetProgram(),
+			"diffuseTex"), 0);
 		Matrix4 model = n->GetWorldTransform() *
 			Matrix4::Scale(n->GetModelScale());
 		glUniformMatrix4fv(
-			glGetUniformLocation(shader->GetProgram(),
+			glGetUniformLocation(currentShader->GetProgram(),
 				"modelMatrix"), 1, false, model.values);
 
-		glUniform4fv(glGetUniformLocation(shader->GetProgram(),
+		/*glUniform4fv(glGetUniformLocation(sceneShader->GetProgram(),
 			"nodeColour"), 1, (float*)&n->GetColour());
 
 		texture = n->GetTexture();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture); // returns 0 if no texture
-		glUniform1i(glGetUniformLocation(shader->GetProgram(), "useTexture"),
-			texture);
+		glUniform1i(glGetUniformLocation(sceneShader->GetProgram(), "useTexture"),
+			texture);*/
 		n->Draw(*this);
 
 	}

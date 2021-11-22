@@ -35,15 +35,16 @@ public:
 
 	float GetBoundingRadius() const { return boundingRadius; }
 	void SetBoundingRadius(float f) { boundingRadius = f; }
-	
+
 	float GetCameraDistance() const { return distanceFromCamera; }
 	void SetCameraDistance(float f) { distanceFromCamera = f; }
-	
+
 	void SetTexture(GLuint tex) { texture = tex; }
 	GLuint GetTexture() const { return texture; }
 
-	void AddTexture(GLuint tex) { matTextures.emplace_back(tex); }
-	vector<GLuint> GetMaterialTextures() { return matTextures; }
+	//void AddTexture(GLuint tex) { matTextures.emplace_back(tex); }
+	void SetTextures(vector<GLuint>* texs) { matTextures = texs; }
+	vector<GLuint>* GetMaterialTextures() { return matTextures; }
 	
 	static bool CompareByCameraDistance(SceneNode * a, SceneNode * b) {
 		return (a->distanceFromCamera < b->distanceFromCamera) ? true : false;
@@ -74,7 +75,7 @@ protected:
 	float distanceFromCamera;
 	float boundingRadius;
 	GLuint texture;
-	vector <GLuint> matTextures;
+	vector<GLuint>* matTextures;
 	MeshMaterial* material;
 
 };

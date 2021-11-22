@@ -44,7 +44,6 @@ protected:
 	Shader* terrainShader;
 	Shader* sceneShader;
 	MeshMaterial* material;
-	vector <GLuint> matTextures;
 	Camera* camera;
 	GLuint texture;
 	GLuint terrainTex;

@@ -5,6 +5,9 @@ SceneNode::SceneNode(Mesh* mesh, Vector4 colour) {
 	this->mesh = mesh;
 	this->colour = colour;
 	parent = NULL;
+	shader = NULL;
+	material = NULL;
+	//matTextures = vector<GLuint>(0);
 	modelScale = Vector3(1, 1, 1);
 	boundingRadius = 1.0f;
 	distanceFromCamera = 0.0f;
@@ -15,6 +18,7 @@ SceneNode::~SceneNode(void) {
 	for (unsigned int i = 0; i < children.size(); ++i) {
 		delete children[i];
 	}
+	delete[] matTextures;
 }
 
 void SceneNode::AddChild(SceneNode* s)
@@ -47,7 +51,7 @@ void SceneNode::Draw(const OGLRenderer& r)
 		if (mesh->GetSubMeshCount() > 0) {
 			for (int i = 0; i < mesh->GetSubMeshCount(); ++i) {
 				glActiveTexture(GL_TEXTURE0);
-				glBindTexture(GL_TEXTURE_2D, matTextures[i]);
+				glBindTexture(GL_TEXTURE_2D, (*matTextures)[i]);
 				mesh->DrawSubMesh(i);
 			}
 		}
