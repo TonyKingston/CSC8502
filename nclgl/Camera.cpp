@@ -43,7 +43,7 @@ void Camera::UpdateCamera(float dt /*= 1.0f*/)
 	Vector3 forward = rotation * Vector3(0, 0, -1);
 	Vector3 right = rotation * Vector3(1, 0, 0);
 
-	float speed = 100.0f * dt;
+	float speed = 150.0f * dt;
 
 	if (Window::GetKeyboard()->KeyDown(KEYBOARD_W)) {
 		position += Matrix4::Rotation(yaw, Vector3(0, 1, 0)) * Vector3(0, 0, -1) * speed;

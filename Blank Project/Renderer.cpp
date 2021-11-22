@@ -43,7 +43,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 
 	camera = new Camera();
 	Vector3 dimensions = heightMap->GetHeightmapSize();
-	//camera->SetPosition(dimensions * Vector3(0.5, 2, 0.5));
+	camera->SetPosition(dimensions * Vector3(0.5, 2, 0.5));
 
 	root = new SceneNode();
 	SceneNode* s = new SceneNode();
@@ -123,8 +123,8 @@ void Renderer::RenderScene() {
 	BuildNodeLists(root);
 	SortNodeLists();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	//DrawSkybox();
-	//DrawHeightMap();
+	DrawSkybox();
+	DrawHeightMap();
 	//DrawWater();
 	//BindShader(terrainShader);
 	
@@ -182,13 +182,18 @@ void Renderer::DrawSkybox() {
 
 void Renderer::DrawHeightMap() {
 	BindShader(terrainShader);
+	UpdateShaderMatrices();
 	glUniform1i(glGetUniformLocation(terrainShader->GetProgram(),
 		"diffuseTex"), 0);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, terrainTex);
+	Matrix4 model = modelMatrix * Matrix4::Scale(Vector3(4, 4, 4));
+	glUniformMatrix4fv(
+		glGetUniformLocation(terrainShader->GetProgram(),
+			"modelMatrix"), 1, false, model.values);
 	//modelMatrix.ToIdentity(); 
 	//textureMatrix.ToIdentity();
-	UpdateShaderMatrices();
+	
 	heightMap->Draw();
 }
 
