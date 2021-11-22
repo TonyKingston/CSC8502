@@ -4,6 +4,7 @@
 #include "../nclgl/Vector4.h"
 #include "../nclgl/Mesh.h"
 #include "../nclgl/Shader.h"
+#include "../nclgl/MeshMaterial.h"
 #include <vector>
 
 class SceneNode
@@ -25,6 +26,10 @@ public:
 	Mesh* GetMesh() const { return mesh; }
 	void SetMesh(Mesh* m) { mesh = m; }
 
+	MeshMaterial* GetMeshMaterial() const { return material; }
+	void SetMeshMaterial(MeshMaterial* m) { material = m; }
+
+
 	Shader* GetShader() const { return shader; }
 	void SetShader(Shader* s) { shader = s; }
 
@@ -36,6 +41,9 @@ public:
 	
 	void SetTexture(GLuint tex) { texture = tex; }
 	GLuint GetTexture() const { return texture; }
+
+	void AddTexture(GLuint tex) { matTextures.emplace_back(tex); }
+	vector<GLuint> GetMaterialTextures() { return matTextures; }
 	
 	static bool CompareByCameraDistance(SceneNode * a, SceneNode * b) {
 		return (a->distanceFromCamera < b->distanceFromCamera) ? true : false;
@@ -66,6 +74,8 @@ protected:
 	float distanceFromCamera;
 	float boundingRadius;
 	GLuint texture;
+	vector <GLuint> matTextures;
+	MeshMaterial* material;
 
 };
 

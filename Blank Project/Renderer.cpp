@@ -18,17 +18,41 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
 
 	font = SOIL_load_OGL_texture(TEXTUREDIR"tahoma.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_COMPRESS_TO_DXT);
+	tree = Mesh::LoadFromMeshFile("rock2.msh");
+	material = new MeshMaterial("rock2.mat");
+	std::cout << tree->GetSubMeshCount() << std::endl;
+	for (int i = 0; i < tree->GetSubMeshCount(); ++i) {
+		const MeshMaterialEntry* matEntry =
+			material->GetMaterialForLayer(i);
 
+		const string* filename = nullptr;
+		matEntry->GetEntry("Diffuse", &filename);
+		string path = TEXTUREDIR + *filename;
+		GLuint texID = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
+			SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
+		matTextures.emplace_back(texID);
+	}
 	//if (!reflect || !refract || !skybox) return;
 
 	shader = new Shader("MatrixVertex.glsl", "colourFragment.glsl");
 	terrainShader = new Shader("TexturedVertex.glsl ", "TexturedFragment.glsl");
 	skyboxShader = new Shader("skyboxVertex.glsl ", "skyboxFragment.glsl");
+	sceneShader = new Shader("SceneVertex.glsl", "Scenefragment.glsl");
 	//shader = new Shader("waterVertex.glsl", "waterFragment.glsl");
 
 	camera = new Camera();
 	Vector3 dimensions = heightMap->GetHeightmapSize();
-	camera->SetPosition(dimensions * Vector3(0.5, 2, 0.5));
+	//camera->SetPosition(dimensions * Vector3(0.5, 2, 0.5));
+
+	root = new SceneNode();
+	SceneNode* s = new SceneNode();
+	s->SetMesh(tree);
+	s->SetMeshMaterial(material);
+	for (auto t : matTextures) {
+		s->AddTexture(t);
+	}
+	s->SetShader(terrainShader);
+	root->AddChild(s);
 
 	projMatrix = Matrix4::Perspective(1.0f, 15000.0f,
 		(float)width / (float)height, 45.0f);
@@ -51,7 +75,11 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 Renderer::~Renderer(void) {
 	delete triangle;
 	delete quad;
+	delete tree;
+	delete material;
 	delete shader;
+	delete terrainShader;
+	delete sceneShader;
 	delete skyboxShader;
 	delete camera;
 	glDeleteTextures(1, &texture);
@@ -93,11 +121,24 @@ void Renderer::ToggleFiltering()
 }
 
 void Renderer::RenderScene() {
+	BuildNodeLists(root);
+	SortNodeLists();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	DrawSkybox();
-	DrawHeightMap();
-	DrawWater();
-	
+	//DrawSkybox();
+	//DrawHeightMap();
+	// DrawWater();
+	BindShader(terrainShader);
+	glUniform1i(glGetUniformLocation(terrainShader->GetProgram(),
+		"diffuseTex"), 0);
+
+	UpdateShaderMatrices();
+	/*for (int i = 0; i < tree->GetSubMeshCount(); ++i) {
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, matTextures[i]);
+		tree->DrawSubMesh(i);
+	}*/
+	DrawNodes();
+	ClearNodeLists();
 }
 
 void Renderer::UpdateScene(float dt) {
@@ -123,10 +164,10 @@ void Renderer::DrawWater() {
 	UpdateShaderMatrices();
 
 	//Matrix4 model = Matrix4::Translation(Vector3(0, 0, -5)) * Matrix4::Scale(Vector3(10, 10, 10));
-	Matrix4 model = Matrix4::Translation(Vector3(hSize.x * 0.5, 25, hSize.z * 0.5 )) * Matrix4::Scale(hSize * 0.5f) * Matrix4::Rotation(90, Vector3(1, 0, 0));
+/*	Matrix4 model = Matrix4::Translation(Vector3(hSize.x * 0.5, 25, hSize.z * 0.5 )) * Matrix4::Scale(hSize * 0.5f) * Matrix4::Rotation(90, Vector3(1, 0, 0));
 	glUniformMatrix4fv(
 		glGetUniformLocation(shader->GetProgram(),
-			"modelMatrix"), 1, false, model.values);
+			"modelMatrix"), 1, false, model.values);*/
 	quad->Draw();
 }
 
@@ -141,7 +182,7 @@ void Renderer::DrawSkybox() {
 
 void Renderer::DrawHeightMap() {
 	BindShader(terrainShader);
-	glUniform1i(glGetUniformLocation(shader->GetProgram(),
+	glUniform1i(glGetUniformLocation(terrainShader->GetProgram(),
 		"diffuseTex"), 0);
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, terrainTex);

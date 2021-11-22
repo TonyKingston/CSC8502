@@ -14,7 +14,9 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 
 	mesh = Mesh::LoadFromMeshFile("Role_T.msh");
 	anim = new MeshAnimation("Role_T.anm");
-	material = new MeshMaterial("Role_T.mat");	for (int i = 0; i < mesh->GetSubMeshCount(); ++i) {
+	material = new MeshMaterial("Role_T.mat");
+
+	for (int i = 0; i < mesh->GetSubMeshCount(); ++i) {
 		const MeshMaterialEntry * matEntry =
 			material->GetMaterialForLayer(i);
 		
@@ -35,7 +37,10 @@ Renderer ::~Renderer(void) {
 	delete mesh;
 	delete anim;
 	delete material;
-	delete shader;}void Renderer::UpdateScene(float dt) {
+	delete shader;
+}
+
+void Renderer::UpdateScene(float dt) {
 	camera->UpdateCamera(dt);
 	viewMatrix = camera->BuildViewMatrix();
 
@@ -43,7 +48,10 @@ Renderer ::~Renderer(void) {
 	while (frameTime < 0.0f) {
 		currentFrame = (currentFrame + 1) % anim->GetFrameCount();
 		frameTime += 1.0f / anim->GetFrameRate();
-	}}void Renderer::RenderScene() {
+	}
+}
+
+void Renderer::RenderScene() {
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	
 	BindShader(shader);
@@ -61,9 +69,14 @@ Renderer ::~Renderer(void) {
 	}
 	int j = glGetUniformLocation(shader->GetProgram(), "joints");
 	glUniformMatrix4fv(j, frameMatrices.size(), false,
-		(float*)frameMatrices.data());	for (int i = 0; i < mesh->GetSubMeshCount(); ++i) {
+		(float*)frameMatrices.data());
+
+	for (int i = 0; i < mesh->GetSubMeshCount(); ++i) {
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, matTextures[i]);
 		mesh->DrawSubMesh(i);
 		
-	}}
+	}
+}
+
+

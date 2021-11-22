@@ -22,5 +22,6 @@ protected:
 	vector <GLuint> matTextures;
 	
 	int currentFrame;
-	float frameTime;
+	float frameTime;
+
 };

@@ -5,6 +5,7 @@
 #include "../nclgl/SceneNode.h"
 #include "../nclgl/Frustum.h"
 #include "../nclgl/HeightMap.h"
+#include "../nclgl/MeshMaterial.h"
 #include "WaterFBO.h"
 
 class Renderer : public OGLRenderer {
@@ -34,11 +35,16 @@ public:
 	int CreateFrameBuffer();
 
 protected:
+	SceneNode* root;
 	Mesh* triangle;
 	Mesh* quad;
+	Mesh* tree;
 	Shader* shader;
 	Shader* skyboxShader;
 	Shader* terrainShader;
+	Shader* sceneShader;
+	MeshMaterial* material;
+	vector <GLuint> matTextures;
 	Camera* camera;
 	GLuint texture;
 	GLuint terrainTex;
