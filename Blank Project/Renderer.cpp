@@ -53,6 +53,8 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	s->SetShader(terrainShader);
 	root->AddChild(s);
 
+	camera->SetPosition(s->GetWorldTransform().GetPositionVector());
+
 	projMatrix = Matrix4::Perspective(1.0f, 15000.0f,
 		(float)width / (float)height, 45.0f);
 
