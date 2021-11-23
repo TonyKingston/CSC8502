@@ -12,7 +12,9 @@ in Vertex {
  vec3 worldPos;
 } IN;
 
-out vec4 fragColour;void main ( void ) {
+out vec4 fragColour;
+
+void main ( void ) {
  vec4 diffuse = texture ( diffuseTex , IN.texCoord );
  vec3 viewDir = normalize ( cameraPos - IN.worldPos );
 

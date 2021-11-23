@@ -196,11 +196,12 @@ void Renderer::DrawSkybox() {
 void Renderer::DrawHeightMap() {
 	BindShader(terrainShader);
 	UpdateShaderMatrices();
-	glUniform1i(glGetUniformLocation(terrainShader->GetProgram(),
-		"terrainSampler"), 0);
+	
 	for (int i = 0; i < 3; i++) {
+		glUniform1i(glGetUniformLocation(terrainShader->GetProgram(),
+			("terrainSampler[" + std::to_string(i) + "]").c_str()), 0);
 		glActiveTexture(GL_TEXTURE0 + i);
-		glBindTexture(GL_TEXTURE_2D_ARRAY, terrainTexs[i]);
+		glBindTexture(GL_TEXTURE_2D, terrainTexs[i]);
 	}
 	//glActiveTexture(GL_TEXTURE0);
 	//glBindTexture(GL_TEXTURE_2D, terrainTex);

@@ -42,7 +42,7 @@ void main(void) {
 */
 //uniform sampler2D diffuseTex;
 //uniform sampler2D diffuseTex2;
-uniform sampler2D terrainSampler[4];
+uniform sampler2D terrainSampler[3];
 
 in Vertex {
   vec2 texCoord;
@@ -55,10 +55,10 @@ out vec4 fragColour;
 void main(void) {
   vec4 diffuse;
  // fragColour = mix(texture(diffuseTex2, IN.texCoord), //texture(diffuseTex, IN.texCoord), 1.0);
- if (IN.height < 160) {
+ if (IN.height < 100) {
    diffuse = texture(terrainSampler[0], IN.texCoord);
- } else if (IN.height < 1000) {
-   diffuse = mix(texture(terrainSampler[1],IN.texCoord), texture(terrainSampler[0], IN.texCoord), (1000 - IN.height)  / (1000 -160));
+ } else if (IN.height < 250) {
+   diffuse = mix(texture(terrainSampler[1],IN.texCoord), texture(terrainSampler[0], IN.texCoord), (250 - IN.height)  / (150));
  }
  fragColour = diffuse;
  // fragColour = texture(diffuseTex, IN.texCoord);

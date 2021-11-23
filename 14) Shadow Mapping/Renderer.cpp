@@ -68,10 +68,15 @@ void Renderer::UpdateScene(float dt) {
 		Vector3 t = Vector3(-10 + (5 * i), 2.0f + sin(sceneTime * i), 0);
 		sceneTransforms[i] = Matrix4::Translation(t) *
 			Matrix4::Rotation(sceneTime * 10 * i, Vector3(1, 0, 0));
-	}}void Renderer::RenderScene() {
+	}
+}
+
+void Renderer::RenderScene() {
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	DrawShadowScene();
-	DrawMainScene();}
+	DrawMainScene();
+}
+
 void Renderer::DrawShadowScene()
 {
 	glBindFramebuffer(GL_FRAMEBUFFER, shadowFBO);
@@ -80,7 +85,8 @@ void Renderer::DrawShadowScene()
 	glViewport(0, 0, SHADOWSIZE, SHADOWSIZE);
 	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
 	
-	BindShader(shadowShader);	viewMatrix = Matrix4::BuildViewMatrix(
+	BindShader(shadowShader);
+	viewMatrix = Matrix4::BuildViewMatrix(
 		light->GetPosition(), Vector3(0, 0, 0));
 	projMatrix = Matrix4::Perspective(1, 100, 1, 45);
 	shadowMatrix = projMatrix * viewMatrix; // used later
@@ -123,5 +129,6 @@ void Renderer::DrawMainScene()
 	for (int i = 0; i < 4; ++i) {
 		modelMatrix = sceneTransforms[i];
 		UpdateShaderMatrices();
-		sceneMeshes[i]->Draw();	}
+		sceneMeshes[i]->Draw();
+	}
 }
