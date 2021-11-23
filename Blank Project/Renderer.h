@@ -47,6 +47,7 @@ protected:
 	Camera* camera;
 	GLuint texture;
 	GLuint terrainTex;
+	GLuint terrainNorm;
 	GLuint skybox;
 	GLuint font;
 	bool filtering;

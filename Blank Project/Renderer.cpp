@@ -17,6 +17,9 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	terrainTex = SOIL_load_OGL_texture(TEXTUREDIR "sand_Diffuse.tga",
 		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
 
+	terrainNorm = SOIL_load_OGL_texture(TEXTUREDIR "sand_Normal.tga",
+		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+
 	font = SOIL_load_OGL_texture(TEXTUREDIR"tahoma.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_COMPRESS_TO_DXT);
 	tree = Mesh::LoadFromMeshFile("rock2.msh");
 	material = new MeshMaterial("rock2.mat");
@@ -51,9 +54,11 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	s->SetMeshMaterial(material);
 	s->SetTextures(matTextures);
 	s->SetShader(terrainShader);
+	s->SetBoundingRadius(10.0f);
+	
 	root->AddChild(s);
 
-	camera->SetPosition(s->GetWorldTransform().GetPositionVector());
+	//camera->SetPosition(s->GetWorldTransform().GetPositionVector());
 
 	projMatrix = Matrix4::Perspective(1.0f, 15000.0f,
 		(float)width / (float)height, 45.0f);
@@ -127,7 +132,7 @@ void Renderer::RenderScene() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	DrawSkybox();
 	DrawHeightMap();
-	//DrawWater();
+	DrawWater();
 	//BindShader(terrainShader);
 	
 
