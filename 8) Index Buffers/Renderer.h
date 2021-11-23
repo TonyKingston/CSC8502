@@ -16,4 +16,5 @@ protected:
 	Shader* shader;
 	Camera* camera;
 	GLuint terrainTex;
+	GLuint terrainTex2;
 };
