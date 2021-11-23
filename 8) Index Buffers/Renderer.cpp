@@ -7,7 +7,7 @@ Renderer::Renderer(Window & parent) : OGLRenderer(parent) {
 	Vector3 dimensions = heightMap->GetHeightmapSize();
 	camera->SetPosition(dimensions * Vector3(0.5, 2, 0.5));
 	
-	shader = new Shader("TexturedVertex.glsl ", "TexturedFragment.glsl");
+	shader = new Shader("TexturedVertex.glsl ", "TerrainFragment.glsl");
 	if (!shader->LoadSuccess()) {
 		return;
 	}
