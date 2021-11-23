@@ -46,7 +46,7 @@ protected:
 	MeshMaterial* material;
 	Camera* camera;
 	GLuint texture;
-	GLuint terrainTex;
+	GLuint terrainTexs[3];
 	GLuint terrainNorm;
 	GLuint skybox;
 	GLuint font;

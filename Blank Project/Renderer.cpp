@@ -14,7 +14,11 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 		TEXTUREDIR"rusted_south.jpg", TEXTUREDIR"rusted_north.jpg",
 		SOIL_LOAD_RGB, SOIL_CREATE_NEW_ID, 0);
 
-	terrainTex = SOIL_load_OGL_texture(TEXTUREDIR "sand_Diffuse.tga",
+	terrainTexs[0] = SOIL_load_OGL_texture(TEXTUREDIR "sand_Diffuse.tga",
+		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+	terrainTexs[1] = SOIL_load_OGL_texture(TEXTUREDIR "grass_Diffuse.tga",
+		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+	terrainTexs[2] = SOIL_load_OGL_texture(TEXTUREDIR "rock_Diffuse.JPG",
 		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
 
 	terrainNorm = SOIL_load_OGL_texture(TEXTUREDIR "sand_Normal.tga",
@@ -39,7 +43,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	//if (!reflect || !refract || !skybox) return;
 
 	shader = new Shader("MatrixVertex.glsl", "colourFragment.glsl");
-	terrainShader = new Shader("TexturedVertex.glsl ", "TexturedFragment.glsl");
+	terrainShader = new Shader("TexturedVertex.glsl ", "TerrainFragment.glsl");
 	skyboxShader = new Shader("skyboxVertex.glsl ", "skyboxFragment.glsl");
 	sceneShader = new Shader("SceneVertex.glsl", "Scenefragment.glsl");
 	//shader = new Shader("waterVertex.glsl", "waterFragment.glsl");
@@ -66,7 +70,9 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	if (!shader->LoadSuccess() || !terrainShader->LoadSuccess() || !skyboxShader->LoadSuccess()) {
 		return;
 	}
-	SetTextureRepeating(terrainTex, true);
+	for (auto tex : terrainTexs) {
+		SetTextureRepeating(tex, true);
+	}
 
 	//waterBuffer = new WaterFBO(reflect, refract);
 
@@ -90,7 +96,7 @@ Renderer::~Renderer(void) {
 	delete camera;
 	glDeleteTextures(1, &texture);
 	glDeleteTextures(1, &skybox);
-	glDeleteTextures(1, &terrainTex);
+	glDeleteTextures(4, terrainTexs);
 	glDeleteTextures(1, &font);
 }
 
@@ -191,9 +197,13 @@ void Renderer::DrawHeightMap() {
 	BindShader(terrainShader);
 	UpdateShaderMatrices();
 	glUniform1i(glGetUniformLocation(terrainShader->GetProgram(),
-		"diffuseTex"), 0);
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, terrainTex);
+		"terrainSampler"), 0);
+	for (int i = 0; i < 3; i++) {
+		glActiveTexture(GL_TEXTURE0 + i);
+		glBindTexture(GL_TEXTURE_2D_ARRAY, terrainTexs[i]);
+	}
+	//glActiveTexture(GL_TEXTURE0);
+	//glBindTexture(GL_TEXTURE_2D, terrainTex);
 	Matrix4 model = modelMatrix * Matrix4::Scale(Vector3(4, 4, 4));
 	glUniformMatrix4fv(
 		glGetUniformLocation(terrainShader->GetProgram(),
