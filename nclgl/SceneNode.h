@@ -75,6 +75,7 @@ protected:
 	float distanceFromCamera;
 	float boundingRadius;
 	GLuint texture;
+	GLuint normal;
 	vector<GLuint>* matTextures;
 	MeshMaterial* material;
 

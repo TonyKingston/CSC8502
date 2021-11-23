@@ -9,6 +9,23 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	//GLuint reflect = SOIL_load_OGL_texture(TEXTUREDIR"brick.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, 0);
 	//GLuint refract = SOIL_load_OGL_texture(TEXTUREDIR"water.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, 0);
 
+	// Shaders
+	shader = new Shader("MatrixVertex.glsl", "colourFragment.glsl");
+	terrainShader = new Shader("TexturedVertex.glsl ", "TexturedFragment.glsl");
+	skyboxShader = new Shader("skyboxVertex.glsl ", "skyboxFragment.glsl");
+	sceneShader = new Shader("SceneVertex.glsl", "Scenefragment.glsl");
+
+	sceneShaders.push_back(shader);
+	sceneShaders.push_back(terrainShader);
+	sceneShaders.push_back(skyboxShader);
+	sceneShaders.push_back(sceneShader);
+	//shader = new Shader("waterVertex.glsl", "waterFragment.glsl");
+	for (auto s : sceneShaders) {
+		if (!s->LoadSuccess()) {
+			return;
+		}
+	}
+
 	skybox = SOIL_load_OGL_cubemap(TEXTUREDIR"rusted_west.jpg", TEXTUREDIR"rusted_east.jpg",
 		TEXTUREDIR"rusted_up.jpg", TEXTUREDIR"rusted_down.jpg",
 		TEXTUREDIR"rusted_south.jpg", TEXTUREDIR"rusted_north.jpg",
@@ -25,11 +42,12 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 		//SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
 
 	//font = SOIL_load_OGL_texture(TEXTUREDIR"tahoma.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_COMPRESS_TO_DXT);
-	tree = Mesh::LoadFromMeshFile("rock2.msh");
-	material = new MeshMaterial("rock2.mat");
+	tree = Mesh::LoadFromMeshFile("Coconut_Palm_Tree01.msh");
+	sceneMeshes.push_back(tree);
+	material = new MeshMaterial("Coconut_Palm_Tree01.mat");
 	std::cout << tree->GetSubMeshCount() << std::endl;
-	vector <GLuint>* matTextures = new vector<GLuint>(0);
-	for (int i = 0; i < tree->GetSubMeshCount(); ++i) {
+//	vector <GLuint>* matTextures = new vector<GLuint>(0);
+	/*for (int i = 0; i < tree->GetSubMeshCount(); ++i) {
 		const MeshMaterialEntry* matEntry =
 			material->GetMaterialForLayer(i);
 
@@ -39,37 +57,38 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 		GLuint texID = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
 			SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
 		matTextures->emplace_back(texID);
-	}
-	//if (!reflect || !refract || !skybox) return;
 
-	shader = new Shader("MatrixVertex.glsl", "colourFragment.glsl");
-	terrainShader = new Shader("TexturedVertex.glsl ", "TerrainFragment.glsl");
-	skyboxShader = new Shader("skyboxVertex.glsl ", "skyboxFragment.glsl");
-	sceneShader = new Shader("SceneVertex.glsl", "Scenefragment.glsl");
-	//shader = new Shader("waterVertex.glsl", "waterFragment.glsl");
+	}*/
+	//if (!reflect || !refract || !skybox) return;
+	const MeshMaterialEntry* matEntry =
+		material->GetMaterialForLayer(0);
+	const string* filename = nullptr;
+	matEntry->GetEntry("Diffuse", &filename);
+	string path = TEXTUREDIR + *filename;
+	GLuint texID = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
+		SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
+	if (!texID) return;
 
 	camera = new Camera();
 	Vector3 dimensions = heightMap->GetHeightmapSize();
 	camera->SetPosition(dimensions * Vector3(0.5, 2, 0.5));
 
 	root = new SceneNode();
-	SceneNode* s = new SceneNode();
-	s->SetMesh(tree);
+	SceneNode* s = new SceneNode(tree, Vector4(1,1,1,0.9));
 	s->SetMeshMaterial(material);
-	s->SetTextures(matTextures);
+	//s->SetTextures(matTextures);
 	s->SetShader(terrainShader);
 	s->SetBoundingRadius(10.0f);
+	s->SetTexture(texID);
 	
 	root->AddChild(s);
 
-	//camera->SetPosition(s->GetWorldTransform().GetPositionVector());
+	camera->SetPosition(s->GetWorldTransform().GetPositionVector());
 
 	projMatrix = Matrix4::Perspective(1.0f, 15000.0f,
 		(float)width / (float)height, 45.0f);
 
-	if (!shader->LoadSuccess() || !terrainShader->LoadSuccess() || !skyboxShader->LoadSuccess()) {
-		return;
-	}
+	
 	for (auto tex : terrainTexs) {
 		SetTextureRepeating(tex, true);
 	}
@@ -78,8 +97,11 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-//	glEnable(GL_CULL_FACE);
-	//glCullFace(GL_BACK);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	//glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
 
 	init = true;
 }
@@ -98,6 +120,10 @@ Renderer::~Renderer(void) {
 	glDeleteTextures(1, &skybox);
 	glDeleteTextures(3, terrainTexs);
 	glDeleteTextures(1, &font);
+	for (auto& shader : sceneShaders)
+		delete shader;
+	for (auto& mesh : sceneMeshes)
+		delete mesh;
 }
 
 void Renderer::SwitchToPerspective()
@@ -148,6 +174,7 @@ void Renderer::RenderScene() {
 		glBindTexture(GL_TEXTURE_2D, matTextures[i]);
 		tree->DrawSubMesh(i);
 	}*/
+
 	DrawNodes();
 	ClearNodeLists();
 }
@@ -270,6 +297,10 @@ void Renderer::DrawNode(SceneNode* n) {
 		glUniformMatrix4fv(
 			glGetUniformLocation(currentShader->GetProgram(),
 				"modelMatrix"), 1, false, model.values);
+
+/*		texture = n->GetTexture();
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, texture);*/
 
 		/*glUniform4fv(glGetUniformLocation(sceneShader->GetProgram(),
 			"nodeColour"), 1, (float*)&n->GetColour());

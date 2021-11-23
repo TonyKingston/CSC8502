@@ -48,13 +48,13 @@ void SceneNode::Update(float dt)
 void SceneNode::Draw(const OGLRenderer& r)
 {
 	if (mesh) {
-		if (mesh->GetSubMeshCount() > 0) {
+		/*if (mesh->GetSubMeshCount() > 0) {
 			for (int i = 0; i < mesh->GetSubMeshCount(); ++i) {
 				glActiveTexture(GL_TEXTURE0);
 				glBindTexture(GL_TEXTURE_2D, (*matTextures)[i]);
 				mesh->DrawSubMesh(i);
 			}
-		}
+		}*/
 		mesh->Draw(); 
 	}
 }

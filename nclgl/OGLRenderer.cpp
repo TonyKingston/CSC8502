@@ -224,15 +224,30 @@ void OGLRenderer::SetTextureRepeating(GLuint target, bool repeating) {
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-void OGLRenderer::SetShaderLight(const Light& l) {
-	glUniform3fv(glGetUniformLocation(currentShader->GetProgram(),
-		"lightPos"), 1, (float*)& l.GetPosition());
-
-	glUniform4fv(glGetUniformLocation(currentShader->GetProgram(),
-			"lightColour"), 1, (float*)& l.GetColour());
+void OGLRenderer::SetShaderLight(Light* l) {
+	glUniform4fv(glGetUniformLocation(currentShader->GetProgram(), "lightColour"), 1, (float*)&l->GetColour());
+	/*if (SpotLight* s = dynamic_cast<SpotLight*> (l)) {
+		glUniform3fv(glGetUniformLocation(currentShader->GetProgram(), "lightPos"), 1, (float*)&s->GetPosition());
+		glUniform1f(glGetUniformLocation(currentShader->GetProgram(), "lightRadius"), s->GetRadius());
+		glUniform3fv(glGetUniformLocation(currentShader->GetProgram(), "lightDirection"), 1, (float*)&s->GetDirection());
+		glUniform1f(glGetUniformLocation(currentShader->GetProgram(), "lightAngle"), DegToRad(s->GetAngle()));
+	}
+	else if (PointLight* p = dynamic_cast<PointLight*> (l)) {
+		glUniform3fv(glGetUniformLocation(currentShader->GetProgram(), "lightPos"), 1, (float*)&p->GetPosition());
+		glUniform1f(glGetUniformLocation(currentShader->GetProgram(), "lightRadius"), p->GetRadius());
+		glUniform3fv(glGetUniformLocation(currentShader->GetProgram(), "lightDirection"), 1, (float*)&Vector3(0, 0, 0));
+		glUniform1f(glGetUniformLocation(currentShader->GetProgram(), "lightAngle"), 0.0f);
+	}
+	else if (DirectionalLight* d = dynamic_cast<DirectionalLight*> (l)) {
+		glUniform3fv(glGetUniformLocation(currentShader->GetProgram(), "lightPos"), 1, (float*)&Vector3(0, 0, 0));
+		glUniform1f(glGetUniformLocation(currentShader->GetProgram(), "lightRadius"), 0.0f);
+		glUniform3fv(glGetUniformLocation(currentShader->GetProgram(), "lightDirection"), 1, (float*)&d->GetDirection());
+		glUniform1f(glGetUniformLocation(currentShader->GetProgram(), "lightAngle"), 0.0f);*/
+	glUniform3fv(glGetUniformLocation(currentShader->GetProgram(), "lightPos"), 1, (float*)&l ->GetPosition());
+	glUniform1f(glGetUniformLocation(currentShader->GetProgram(), "lightRadius"), l->GetRadius());
+	glUniform3fv(glGetUniformLocation(currentShader->GetProgram(), "lightDirection"), 1, (float*)&l ->GetDirection());
+	glUniform1f(glGetUniformLocation(currentShader->GetProgram(), "lightAngle"), DegToRad(l->GetAngle()));
 	
-	glUniform1f(glGetUniformLocation(currentShader->GetProgram(),
-			"lightRadius"), l.GetRadius());
 }
 
 #ifdef OPENGL_DEBUGGING

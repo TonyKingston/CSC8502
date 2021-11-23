@@ -50,6 +50,9 @@ protected:
 	GLuint terrainNorm;
 	GLuint skybox;
 	GLuint font;
+	vector<Shader*> sceneShaders;
+	vector<GLuint> sceneTextures;
+	vector<Mesh*> sceneMeshes;
 	bool filtering;
 	bool repeating;
 	float fov;

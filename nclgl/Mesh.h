@@ -54,7 +54,6 @@ public:
 
 	static Mesh* LoadFromMeshFile(const std::string& name);
 	static Mesh* GenerateTriangle();
-	static Mesh* GenerateTriangleStrip();
 	static Mesh* GenerateQuad();
 	
 	void GenerateNormals();

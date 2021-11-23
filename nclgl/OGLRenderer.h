@@ -72,7 +72,8 @@ protected:
 	}
 
 	void SetTextureRepeating(GLuint target, bool state);
-	void SetShaderLight(const Light& l);
+	//void SetShaderLight(const Light& l);
+	void SetShaderLight(Light* l);
 
 	Matrix4 projMatrix;		//Projection matrix
 	Matrix4 modelMatrix;	//Model matrix. NOT MODELVIEW
