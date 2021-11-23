@@ -21,10 +21,10 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	terrainTexs[2] = SOIL_load_OGL_texture(TEXTUREDIR "rock_Diffuse.JPG",
 		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
 
-	terrainNorm = SOIL_load_OGL_texture(TEXTUREDIR "sand_Normal.tga",
-		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+	//terrainNorm = SOIL_load_OGL_texture(TEXTUREDIR "sand_Normal.tga",
+		//SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
 
-	font = SOIL_load_OGL_texture(TEXTUREDIR"tahoma.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_COMPRESS_TO_DXT);
+	//font = SOIL_load_OGL_texture(TEXTUREDIR"tahoma.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_COMPRESS_TO_DXT);
 	tree = Mesh::LoadFromMeshFile("rock2.msh");
 	material = new MeshMaterial("rock2.mat");
 	std::cout << tree->GetSubMeshCount() << std::endl;
@@ -96,7 +96,7 @@ Renderer::~Renderer(void) {
 	delete camera;
 	glDeleteTextures(1, &texture);
 	glDeleteTextures(1, &skybox);
-	glDeleteTextures(4, terrainTexs);
+	glDeleteTextures(3, terrainTexs);
 	glDeleteTextures(1, &font);
 }
 
@@ -196,13 +196,14 @@ void Renderer::DrawSkybox() {
 void Renderer::DrawHeightMap() {
 	BindShader(terrainShader);
 	UpdateShaderMatrices();
-	
+	int array[3] = { 0,1,2 };
+	glUniform1iv(glGetUniformLocation(terrainShader->GetProgram(),
+		"terrainSampler"), 3, array);
 	for (int i = 0; i < 3; i++) {
-		glUniform1i(glGetUniformLocation(terrainShader->GetProgram(),
-			("terrainSampler[" + std::to_string(i) + "]").c_str()), 0);
 		glActiveTexture(GL_TEXTURE0 + i);
 		glBindTexture(GL_TEXTURE_2D, terrainTexs[i]);
 	}
+
 	//glActiveTexture(GL_TEXTURE0);
 	//glBindTexture(GL_TEXTURE_2D, terrainTex);
 	Matrix4 model = modelMatrix * Matrix4::Scale(Vector3(4, 4, 4));
