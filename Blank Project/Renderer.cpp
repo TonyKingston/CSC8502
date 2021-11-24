@@ -1,6 +1,8 @@
 #include "Renderer.h"
 #include <algorithm>
 
+const int MAX_TEXTURES = 3;
+
 Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
     //triangle = Mesh::GenerateTriangle();
 	heightMap = new HeightMap(TEXTUREDIR"oblivionResize.png");
@@ -14,7 +16,8 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 //	shader = new Shader("MatrixVertex.glsl", "colourFragment.glsl");
 	shader = new Shader("TexturedVertex.glsl ", "TexturedFragment.glsl");
 	//terrainShader = new Shader("TexturedVertex.glsl ", "TexturedFragment.glsl");
-	terrainShader = new Shader("BumpVertex.glsl ", "TerrainFragment.glsl");
+	//terrainShader = new Shader("BumpVertex.glsl ", "TerrainFragment.glsl");
+	terrainShader = new Shader("basicterrainvertex.glsl ", "basicterrainfrag.glsl");
 	skyboxShader = new Shader("skyboxVertex.glsl ", "skyboxFragment.glsl");
 	sceneShader = new Shader("SceneVertex.glsl", "Scenefragment.glsl");
 	//Shader* lightShader = new Shader("bumpVertex.glsl ", "bumpFragment.glsl");
@@ -43,11 +46,11 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	terrainTexs[2] = SOIL_load_OGL_texture(TEXTUREDIR "rock_Diffuse.JPG",
 		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
 
-	terrainTexs[0] = SOIL_load_OGL_texture(TEXTUREDIR "sand_Normal.tga",
+	terrainBumps[0] = SOIL_load_OGL_texture(TEXTUREDIR "sand_Normal.tga",
 		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
-	terrainTexs[1] = SOIL_load_OGL_texture(TEXTUREDIR "grass_Normal.tga",
+	terrainBumps[1] = SOIL_load_OGL_texture(TEXTUREDIR "grass_Normal.tga",
 		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
-	terrainTexs[2] = SOIL_load_OGL_texture(TEXTUREDIR "rock_Normal.JPG",
+	terrainBumps[2] = SOIL_load_OGL_texture(TEXTUREDIR "rock_Normal.PNG",
 		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
 
 	//font = SOIL_load_OGL_texture(TEXTUREDIR"tahoma.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_COMPRESS_TO_DXT);
@@ -89,26 +92,36 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	s->SetShader(shader);
 	s->SetBoundingRadius(10.0f);
 	s->SetTexture(texID);
+	//s->SetModelScale(Vector3(5, 5, 5));
 	
 	root->AddChild(s);
 
-	//camera->SetPosition(s->GetWorldTransform().GetPositionVector());
+	camera->SetPosition(s->GetWorldTransform().GetPositionVector());
 
 	projMatrix = Matrix4::Perspective(1.0f, 15000.0f,
 		(float)width / (float)height, 45.0f);
 
 	
 	for (auto tex : terrainTexs) {
+		if (!tex) {
+			return;
+		}
 		SetTextureRepeating(tex, true);
 	}
 	for (auto tex : terrainBumps) {
+		if (!tex) {
+			return;
+		}
 		SetTextureRepeating(tex, true);
 	}
 
-	light = new Light(dimensions * Vector3(0.5f, 1.5f, 0.5f),
-		Vector4(1, 1, 1, 1), dimensions.x * 0.5f);
-
-	//waterBuffer = new WaterFBO(reflect, refract);
+	light = new Light(dimensions * Vector3(0.5f, 2.0f, 0.5f),
+		Vector4(1, 1, 1, 1), dimensions.x * 1.5);
+	//clippingPlane = Plane(Vector3(0,-1,0), )
+	//GLuint reflect;
+//	GLuint refract;
+	
+	//glEnable(GL_CLIP_DISTANCE0); // Clipping plane for water
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
@@ -116,6 +129,15 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
+
+	/*glGenTextures(1, &reflect);
+	glGenTextures(1, &refract);
+	waterBuffer = new WaterFBO(reflect, refract);
+	waterBuffer->BindRelfectBuffer();
+	glDrawBuffer(reflect);
+	waterBuffer->BindRefractBuffer();
+	glDrawBuffer(refract);
+	glDisable(GL_CLIP_DISTANCE0);*/
 
 	init = true;
 }
@@ -180,7 +202,7 @@ void Renderer::RenderScene() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	DrawSkybox();
 	DrawHeightMap();
-	DrawWater();
+	//DrawWater();
 	//BindShader(terrainShader);
 	
 
@@ -190,8 +212,8 @@ void Renderer::RenderScene() {
 		glBindTexture(GL_TEXTURE_2D, matTextures[i]);
 		tree->DrawSubMesh(i);
 	}*/
-
-	DrawNodes();
+	
+	//DrawNodes();
 	ClearNodeLists();
 }
 
@@ -237,40 +259,58 @@ void Renderer::DrawSkybox() {
 }
 
 void Renderer::DrawHeightMap() {
+	glDisable(GL_BLEND);
 	BindShader(terrainShader);
 	UpdateShaderMatrices();
-	int texArray[3] = { 0,1,2 };
-	int bumpArray[3] = { 3,4,5 };
+	//GLuint texArray[MAX_TEXTURES];
+	int texArray[] = { 0,1,2};
+	int bumpArray[] = { 3,4,5 };
 	int index = 0;
+	//GLuint bumpArray[3];
+	/*glUniform1iv(glGetUniformLocation(terrainShader->GetProgram(),
+		"terrainSampler"), 3, texArray);*/
+
 	glUniform1iv(glGetUniformLocation(terrainShader->GetProgram(),
-		"terrainSampler"), 3, texArray);
+		"terrainSampler"), MAX_TEXTURES, texArray);
+
 	for (int i = 0; i < 3; i++) {
 		glActiveTexture(GL_TEXTURE0 + i);
 		glBindTexture(GL_TEXTURE_2D, terrainTexs[i]);
 		index++;
 	}
+
+    GLfloat bounds [] = { 40.0f, 150.0f, heightMap->GetHeightmapSize().y };
+	glUniform1fv(glGetUniformLocation(terrainShader->GetProgram(),
+		"bound"), 3, bounds);
+
+	
 	glUniform1iv(glGetUniformLocation(terrainShader->GetProgram(),
-		"terrainBumps"), 3, texArray);
-	for (int i = index; i < index + 3; i++) {
-		glActiveTexture(GL_TEXTURE0 + i);
+		"terrainBumps"), MAX_TEXTURES, bumpArray);
+	for (int i = 0; i < 3; i++) {
+		glActiveTexture(GL_TEXTURE0 + index + i);
 		glBindTexture(GL_TEXTURE_2D, terrainBumps[i]);
 	}
+	
+	glUniform3fv(glGetUniformLocation(terrainShader->GetProgram(),
+		"cameraPos"), 1, (float*)&camera->GetPosition());
+
+	
 
 	SetShaderLight(light);
 
 	//glActiveTexture(GL_TEXTURE0);
 	//glBindTexture(GL_TEXTURE_2D, terrainTex);
-	Matrix4 model = modelMatrix * Matrix4::Scale(Vector3(4, 4, 4));
+	Matrix4 model = modelMatrix * Matrix4::Scale(Vector3(1,1,1));
 	glUniformMatrix4fv(
 		glGetUniformLocation(terrainShader->GetProgram(),
 			"modelMatrix"), 1, false, model.values);
 
-	glUniform3fv(glGetUniformLocation(shader->GetProgram(),
-		"cameraPos"), 1, (float*)&camera->GetPosition());
-	//modelMatrix.ToIdentity(); 
+	//glUniform4f(glGetUniformLocation(terrainShader->GetProgram(), "plane"), 0, -1, 0, 300);
+//	modelMatrix.ToIdentity(); 
 	//textureMatrix.ToIdentity();
 	
 	heightMap->Draw();
+	glEnable(GL_BLEND);
 }
 
 void Renderer::BuildNodeLists(SceneNode* from)
@@ -331,6 +371,8 @@ void Renderer::DrawNode(SceneNode* n) {
      	texture = n->GetTexture();
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texture);
+
+		glUniform4f(glGetUniformLocation(currentShader->GetProgram(), "plane"), 0, -1, 0, 25);
 
 		/*glUniform4fv(glGetUniformLocation(sceneShader->GetProgram(),
 			"nodeColour"), 1, (float*)&n->GetColour());

@@ -101,7 +101,20 @@ Renderer ::~Renderer(void) {
 	glDeleteTextures(1, &lightSpecularTex);
 	
 	glDeleteFramebuffers(1, &bufferFBO);
-	glDeleteFramebuffers(1, &pointLightFBO);}void Renderer::UpdateScene(float dt) {	camera->UpdateCamera(dt);}void Renderer::RenderScene() {	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	FillBuffers();	DrawPointLights();	CombineBuffers();}
+	glDeleteFramebuffers(1, &pointLightFBO);
+}
+
+void Renderer::UpdateScene(float dt) {
+	camera->UpdateCamera(dt);
+}
+
+void Renderer::RenderScene() {
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	FillBuffers();
+	DrawPointLights();
+	CombineBuffers();
+}
+
 
 void Renderer::FillBuffers()
 {

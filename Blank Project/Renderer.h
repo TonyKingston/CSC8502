@@ -54,6 +54,7 @@ protected:
 	vector<Shader*> sceneShaders;
 	vector<GLuint> sceneTextures;
 	vector<Mesh*> sceneMeshes;
+	Plane clippingPlane;
 	bool filtering;
 	bool repeating;
 	float fov;

@@ -60,13 +60,14 @@ in Vertex {
   vec3 tangent;
   vec3 binormal;
   vec3 worldPos;
+  vec3 position;
 } IN;
 
 out vec4 fragColour;
 //out vec4 jointColour;
 void main(void) {
   int bound[3] = {40, 150, 200};
-  float height = IN.worldPos.y;
+  float height = IN.position.y;
   vec4 diffuse;
   vec3 bumpNormal;
 
@@ -83,9 +84,12 @@ void main(void) {
  } else if (height < bound[1]) {
    diffuse = mix(texture(terrainSampler[1],IN.texCoord), texture(terrainSampler[0], IN.texCoord), (bound[1] - height)  / (bound[1] - bound[0]));
    bumpNormal = mix(texture(terrainBumps[1],IN.texCoord), texture(terrainBumps[0], IN.texCoord), (bound[1] - height)  / (bound[1] - bound[0])).rgb;
+   //bumpNormal = texture( terrainBumps[1] , IN.texCoord ).rgb;
  } else if (height < bound[2]) {
    diffuse = mix(texture(terrainSampler[2],IN.texCoord), texture(terrainSampler[1], IN.texCoord), (bound[2] - height)  / (bound[2] - bound[1]));
    bumpNormal = mix(texture(terrainBumps[2],IN.texCoord), texture(terrainBumps[1], IN.texCoord), (bound[2] - height)  / (bound[2] - bound[1])).rgb;
+//bumpNormal = texture( terrainBumps[2] , IN.texCoord ).rgb;
+
  }
  bumpNormal = normalize ( TBN * normalize ( bumpNormal * 2.0 - 1.0));
  float lambert = max ( dot ( incident , bumpNormal ) , 0.0f );

@@ -11,8 +11,8 @@ uniform float lightRadius;
  vec3 colour;
  vec2 texCoord;
  vec3 normal;
- vec3 tangent; // New !
- vec3 binormal; // New !
+ vec3 tangent; 
+ vec3 binormal;
  vec3 worldPos;
 } IN;
 
