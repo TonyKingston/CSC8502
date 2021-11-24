@@ -5,20 +5,25 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
     //triangle = Mesh::GenerateTriangle();
 	heightMap = new HeightMap(TEXTUREDIR"oblivionResize.png");
 	quad = Mesh::GenerateQuad();
+	Vector3 dimensions = heightMap->GetHeightmapSize();
 
 	//GLuint reflect = SOIL_load_OGL_texture(TEXTUREDIR"brick.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, 0);
 	//GLuint refract = SOIL_load_OGL_texture(TEXTUREDIR"water.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, 0);
 
 	// Shaders
-	shader = new Shader("MatrixVertex.glsl", "colourFragment.glsl");
-	terrainShader = new Shader("TexturedVertex.glsl ", "TexturedFragment.glsl");
+//	shader = new Shader("MatrixVertex.glsl", "colourFragment.glsl");
+	shader = new Shader("TexturedVertex.glsl ", "TexturedFragment.glsl");
+	//terrainShader = new Shader("TexturedVertex.glsl ", "TexturedFragment.glsl");
+	terrainShader = new Shader("BumpVertex.glsl ", "TerrainFragment.glsl");
 	skyboxShader = new Shader("skyboxVertex.glsl ", "skyboxFragment.glsl");
 	sceneShader = new Shader("SceneVertex.glsl", "Scenefragment.glsl");
+	//Shader* lightShader = new Shader("bumpVertex.glsl ", "bumpFragment.glsl");
 
 	sceneShaders.push_back(shader);
 	sceneShaders.push_back(terrainShader);
 	sceneShaders.push_back(skyboxShader);
 	sceneShaders.push_back(sceneShader);
+	//sceneShaders.push_back(lightShader);
 	//shader = new Shader("waterVertex.glsl", "waterFragment.glsl");
 	for (auto s : sceneShaders) {
 		if (!s->LoadSuccess()) {
@@ -38,8 +43,12 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	terrainTexs[2] = SOIL_load_OGL_texture(TEXTUREDIR "rock_Diffuse.JPG",
 		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
 
-	//terrainNorm = SOIL_load_OGL_texture(TEXTUREDIR "sand_Normal.tga",
-		//SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+	terrainTexs[0] = SOIL_load_OGL_texture(TEXTUREDIR "sand_Normal.tga",
+		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+	terrainTexs[1] = SOIL_load_OGL_texture(TEXTUREDIR "grass_Normal.tga",
+		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+	terrainTexs[2] = SOIL_load_OGL_texture(TEXTUREDIR "rock_Normal.JPG",
+		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
 
 	//font = SOIL_load_OGL_texture(TEXTUREDIR"tahoma.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_COMPRESS_TO_DXT);
 	tree = Mesh::LoadFromMeshFile("Coconut_Palm_Tree01.msh");
@@ -70,20 +79,20 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	if (!texID) return;
 
 	camera = new Camera();
-	Vector3 dimensions = heightMap->GetHeightmapSize();
+	
 	camera->SetPosition(dimensions * Vector3(0.5, 2, 0.5));
 
 	root = new SceneNode();
 	SceneNode* s = new SceneNode(tree, Vector4(1,1,1,0.9));
 	s->SetMeshMaterial(material);
 	//s->SetTextures(matTextures);
-	s->SetShader(terrainShader);
+	s->SetShader(shader);
 	s->SetBoundingRadius(10.0f);
 	s->SetTexture(texID);
 	
 	root->AddChild(s);
 
-	camera->SetPosition(s->GetWorldTransform().GetPositionVector());
+	//camera->SetPosition(s->GetWorldTransform().GetPositionVector());
 
 	projMatrix = Matrix4::Perspective(1.0f, 15000.0f,
 		(float)width / (float)height, 45.0f);
@@ -92,6 +101,12 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	for (auto tex : terrainTexs) {
 		SetTextureRepeating(tex, true);
 	}
+	for (auto tex : terrainBumps) {
+		SetTextureRepeating(tex, true);
+	}
+
+	light = new Light(dimensions * Vector3(0.5f, 1.5f, 0.5f),
+		Vector4(1, 1, 1, 1), dimensions.x * 0.5f);
 
 	//waterBuffer = new WaterFBO(reflect, refract);
 
@@ -99,7 +114,6 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	//glBlendFunc(GL_SRC_ALPHA, GL_ONE);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
@@ -116,9 +130,11 @@ Renderer::~Renderer(void) {
 	delete sceneShader;
 	delete skyboxShader;
 	delete camera;
+	delete light;
 	glDeleteTextures(1, &texture);
 	glDeleteTextures(1, &skybox);
 	glDeleteTextures(3, terrainTexs);
+	glDeleteTextures(3, terrainBumps);
 	glDeleteTextures(1, &font);
 	for (auto& shader : sceneShaders)
 		delete shader;
@@ -223,13 +239,24 @@ void Renderer::DrawSkybox() {
 void Renderer::DrawHeightMap() {
 	BindShader(terrainShader);
 	UpdateShaderMatrices();
-	int array[3] = { 0,1,2 };
+	int texArray[3] = { 0,1,2 };
+	int bumpArray[3] = { 3,4,5 };
+	int index = 0;
 	glUniform1iv(glGetUniformLocation(terrainShader->GetProgram(),
-		"terrainSampler"), 3, array);
+		"terrainSampler"), 3, texArray);
 	for (int i = 0; i < 3; i++) {
 		glActiveTexture(GL_TEXTURE0 + i);
 		glBindTexture(GL_TEXTURE_2D, terrainTexs[i]);
+		index++;
 	}
+	glUniform1iv(glGetUniformLocation(terrainShader->GetProgram(),
+		"terrainBumps"), 3, texArray);
+	for (int i = index; i < index + 3; i++) {
+		glActiveTexture(GL_TEXTURE0 + i);
+		glBindTexture(GL_TEXTURE_2D, terrainBumps[i]);
+	}
+
+	SetShaderLight(light);
 
 	//glActiveTexture(GL_TEXTURE0);
 	//glBindTexture(GL_TEXTURE_2D, terrainTex);
@@ -237,6 +264,9 @@ void Renderer::DrawHeightMap() {
 	glUniformMatrix4fv(
 		glGetUniformLocation(terrainShader->GetProgram(),
 			"modelMatrix"), 1, false, model.values);
+
+	glUniform3fv(glGetUniformLocation(shader->GetProgram(),
+		"cameraPos"), 1, (float*)&camera->GetPosition());
 	//modelMatrix.ToIdentity(); 
 	//textureMatrix.ToIdentity();
 	
@@ -298,9 +328,9 @@ void Renderer::DrawNode(SceneNode* n) {
 			glGetUniformLocation(currentShader->GetProgram(),
 				"modelMatrix"), 1, false, model.values);
 
-/*		texture = n->GetTexture();
+     	texture = n->GetTexture();
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture);*/
+		glBindTexture(GL_TEXTURE_2D, texture);
 
 		/*glUniform4fv(glGetUniformLocation(sceneShader->GetProgram(),
 			"nodeColour"), 1, (float*)&n->GetColour());

@@ -6,6 +6,7 @@
 #include "../nclgl/Frustum.h"
 #include "../nclgl/HeightMap.h"
 #include "../nclgl/MeshMaterial.h"
+#include "../nclgl/Light.h"
 #include "WaterFBO.h"
 
 class Renderer : public OGLRenderer {
@@ -47,7 +48,7 @@ protected:
 	Camera* camera;
 	GLuint texture;
 	GLuint terrainTexs[3];
-	GLuint terrainNorm;
+	GLuint terrainBumps[3];
 	GLuint skybox;
 	GLuint font;
 	vector<Shader*> sceneShaders;
@@ -60,6 +61,7 @@ protected:
 	Frustum frameFrustum;
 	WaterFBO* waterBuffer;
 	HeightMap* heightMap;
+	Light* light;
 
 	vector<SceneNode*> transparentNodeList;
 	vector<SceneNode*> nodeList;
