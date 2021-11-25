@@ -17,7 +17,8 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 
 	// Shaders
 //	shader = new Shader("MatrixVertex.glsl", "colourFragment.glsl");
-	shader = new Shader("bumpvertex.glsl ", "bumpFragment.glsl");
+	shader = new Shader("TexturedVertex.glsl ", "TexturedFragment.glsl");
+	//shader = new Shader("bumpvertex.glsl ", "bumpFragment.glsl");
 	//terrainShader = new Shader("TexturedVertex.glsl ", "TexturedFragment.glsl");
 	//terrainShader = new Shader("BumpVertex.glsl ", "TerrainFragment.glsl");
 	terrainShader = new Shader("basicterrainvertex.glsl ", "basicterrainfrag.glsl");
@@ -149,7 +150,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-	glEnable(GL_BLEND);
+	//glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
@@ -175,6 +176,9 @@ Renderer::~Renderer(void) {
 	glDeleteTextures(3, terrainTexs);
 	glDeleteTextures(3, terrainBumps);
 	glDeleteTextures(1, &font);
+	auto it = root->GetChildIteratorStart();
+	it++;
+	delete [] (*it)->GetMaterialTextures();
 	for (auto& shader : sceneShaders)
 		delete shader;
 	for (auto& mesh : sceneMeshes)
@@ -323,8 +327,6 @@ void Renderer::DrawHeightMap() {
 
 	SetShaderLight(light);
 
-	//glActiveTexture(GL_TEXTURE0);
-	//glBindTexture(GL_TEXTURE_2D, terrainTex);
 	Matrix4 model = modelMatrix * Matrix4::Scale(Vector3(1,1,1));
 	glUniformMatrix4fv(
 		glGetUniformLocation(terrainShader->GetProgram(),
@@ -413,19 +415,20 @@ void Renderer::DrawNode(SceneNode* n) {
 			glGetUniformLocation(currentShader->GetProgram(),
 				"modelMatrix"), 1, false, model.values);
 
-		glUniform1i(glGetUniformLocation(currentShader->GetProgram(),
+		glUniform1i(glGetUniformLocation(shader->GetProgram(),
 			"diffuseTex"), 0);
-		glActiveTexture(GL_TEXTURE0);
+
+		
+		/*glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, n->GetTexture());
 
-		glUniform1i(glGetUniformLocation(currentShader->GetProgram(),
-			"bumpTex"), 1);
+		
 		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, n->GetBumpTexture());
+		glBindTexture(GL_TEXTURE_2D, n->GetBumpTexture());*/
 
 		glUniform4f(glGetUniformLocation(currentShader->GetProgram(), "plane"), 0, -1, 0, 25);
 
-		SetShaderLight(light);
+	//	SetShaderLight(light);
 
 		/*glUniform4fv(glGetUniformLocation(sceneShader->GetProgram(),
 			"nodeColour"), 1, (float*)&n->GetColour());
@@ -444,7 +447,21 @@ void Renderer::CreateTrees() {
 	auto it = materials.find("rock");
 	if (it != materials.end()) {
 		MeshMaterial* material = it->second;
-		const MeshMaterialEntry* matEntry = material->GetMaterialForLayer(0);
+		Mesh* mesh = meshes.find("rock")->second;
+		vector<GLuint>* matTextures = new vector<GLuint>();
+		for (int i = 0; i < mesh->GetSubMeshCount(); ++i) {
+			const MeshMaterialEntry* matEntry =
+				material->GetMaterialForLayer(i);
+
+			const string* filename = nullptr;
+			matEntry->GetEntry("Diffuse", &filename);
+
+			string path = TEXTUREDIR + *filename;
+			GLuint texID = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
+				SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
+			matTextures->emplace_back(texID);
+		}
+		/*const MeshMaterialEntry* matEntry = material->GetMaterialForLayer(0);
 		const string* filename = nullptr;
 		matEntry->GetEntry("Diffuse", &filename);
 		string path = TEXTUREDIR + *filename;
@@ -454,23 +471,24 @@ void Renderer::CreateTrees() {
 		path = TEXTUREDIR + *filename;
 		GLuint bumpID = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
 			SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
-		//matEntry->GetEntry("Bump", &filename);
+		//matEntry->GetEntry("Bump", &filename);*/
 		// Mesh Extractor doesn't pick up bump map
 	/*	path = TEXTUREDIR"Coconut Palm Tree Pack/Textures/Coconut_Palm_Tree_normalspec_bark.psd";
 		GLuint bumpID = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
 			SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);*/
-		if (!texID || !bumpID) return;
+		//if (!texID || !bumpID) return;
 
-		Mesh* treeMesh = meshes.find("rock")->second;
-		treeMesh->GenerateNormals();
-		treeMesh->GenerateTangents();
+	//	treeMesh->GenerateNormals();
+	//	treeMesh->GenerateTangents();
 		for (int i = 0; i < 10; i++) {
-			SceneNode* s = new SceneNode(treeMesh, Vector4(1, 1, 1, 0.9));
+			//SceneNode* s = new SceneNode(treeMesh, Vector4(1, 1, 1, 0.9));
+			SceneNode* s = new SceneNode(mesh);
 			s->SetMeshMaterial(material);
 			s->SetShader(shader);
 			s->SetBoundingRadius(50.0f);
-			s->SetTexture(texID);
-			s->SetBumpTexture(bumpID);
+			s->SetTextures(matTextures);
+			//s->SetTexture(texID);
+			//s->SetBumpTexture(bumpID);
 			Vector3 pos = light->GetPosition();
 			s->SetTransform(Matrix4::Translation(
 				Vector3(100 * i, 20, 100 * i + (i*20))));
@@ -478,6 +496,7 @@ void Renderer::CreateTrees() {
 			
 			root->AddChild(s);
 		}
+	//	textureMatrix.ToIdentity();
 	}
 	else {
 		return;

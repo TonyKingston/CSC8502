@@ -11,7 +11,7 @@ in vec2 texCoord;
 
 out Vertex {
 vec2 texCoord;
-float height;
+//float height;
  } OUT;
 void main ( void ) {
  vec4 worldPos = ( modelMatrix * vec4 ( position ,1));
@@ -19,5 +19,5 @@ void main ( void ) {
  gl_Position = projMatrix * viewMatrix * worldPos;
  OUT.texCoord = ( textureMatrix * vec4 ( texCoord , 0.0 , 1.0)).xy;
  //OUT.texCoord = texCoord;
- OUT.height = position.y;
+ //OUT.height = position.y;
 }
