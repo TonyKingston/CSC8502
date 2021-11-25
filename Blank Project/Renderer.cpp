@@ -2,30 +2,35 @@
 #include <algorithm>
 
 const int MAX_TEXTURES = 3;
+#define SHADOWSIZE 2048
 
 Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
     //triangle = Mesh::GenerateTriangle();
 	heightMap = new HeightMap(TEXTUREDIR"oblivionResize.png");
 	quad = Mesh::GenerateQuad();
 	Vector3 dimensions = heightMap->GetHeightmapSize();
+	light = new Light(dimensions * Vector3(0.5f, 2.0f, 0.5f),
+		Vector4(1, 1, 1, 1), dimensions.x * 1.5);
 
 	//GLuint reflect = SOIL_load_OGL_texture(TEXTUREDIR"brick.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, 0);
 	//GLuint refract = SOIL_load_OGL_texture(TEXTUREDIR"water.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, 0);
 
 	// Shaders
 //	shader = new Shader("MatrixVertex.glsl", "colourFragment.glsl");
-	shader = new Shader("TexturedVertex.glsl ", "TexturedFragment.glsl");
+	shader = new Shader("bumpvertex.glsl ", "bumpFragment.glsl");
 	//terrainShader = new Shader("TexturedVertex.glsl ", "TexturedFragment.glsl");
 	//terrainShader = new Shader("BumpVertex.glsl ", "TerrainFragment.glsl");
 	terrainShader = new Shader("basicterrainvertex.glsl ", "basicterrainfrag.glsl");
 	skyboxShader = new Shader("skyboxVertex.glsl ", "skyboxFragment.glsl");
 	sceneShader = new Shader("SceneVertex.glsl", "Scenefragment.glsl");
+	shadowShader = new Shader("shadowvertex.glsl", "shadowfragment.glsl");
 	//Shader* lightShader = new Shader("bumpVertex.glsl ", "bumpFragment.glsl");
 
 	sceneShaders.push_back(shader);
 	sceneShaders.push_back(terrainShader);
 	sceneShaders.push_back(skyboxShader);
 	sceneShaders.push_back(sceneShader);
+	sceneShaders.push_back(shadowShader);
 	//sceneShaders.push_back(lightShader);
 	//shader = new Shader("waterVertex.glsl", "waterFragment.glsl");
 	for (auto s : sceneShaders) {
@@ -54,10 +59,11 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
 
 	//font = SOIL_load_OGL_texture(TEXTUREDIR"tahoma.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_COMPRESS_TO_DXT);
-	tree = Mesh::LoadFromMeshFile("Coconut_Palm_Tree01.msh");
-	sceneMeshes.push_back(tree);
-	material = new MeshMaterial("Coconut_Palm_Tree01.mat");
-	std::cout << tree->GetSubMeshCount() << std::endl;
+	meshes.insert({ "tree", Mesh::LoadFromMeshFile("Coconut_Palm_Tree01.msh") });
+	materials.insert({ "tree", new MeshMaterial("Coconut_Palm_Tree01.mat") });
+	meshes.insert({ "rock", Mesh::LoadFromMeshFile("rock2.msh") });
+	materials.insert({ "rock", new MeshMaterial("rock2.mat") });
+
 //	vector <GLuint>* matTextures = new vector<GLuint>(0);
 	/*for (int i = 0; i < tree->GetSubMeshCount(); ++i) {
 		const MeshMaterialEntry* matEntry =
@@ -72,31 +78,35 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 
 	}*/
 	//if (!reflect || !refract || !skybox) return;
-	const MeshMaterialEntry* matEntry =
+	/*const MeshMaterialEntry* matEntry =
 		material->GetMaterialForLayer(0);
 	const string* filename = nullptr;
 	matEntry->GetEntry("Diffuse", &filename);
 	string path = TEXTUREDIR + *filename;
 	GLuint texID = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
 		SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
-	if (!texID) return;
+	if (!texID) return;*/
 
 	camera = new Camera();
 	
 	camera->SetPosition(dimensions * Vector3(0.5, 2, 0.5));
 
 	root = new SceneNode();
-	SceneNode* s = new SceneNode(tree, Vector4(1,1,1,0.9));
+	CreateTrees();
+	auto it = root->GetChildIteratorStart();
+	Vector3 pos = (*it)->GetWorldTransform().GetPositionVector();
+	camera->SetPosition(root->GetChildIteratorStart()[0]->GetWorldTransform().GetPositionVector());
+	/*SceneNode* s = new SceneNode(tree, Vector4(1,1,1,0.9));
 	s->SetMeshMaterial(material);
 	//s->SetTextures(matTextures);
 	s->SetShader(shader);
-	s->SetBoundingRadius(10.0f);
+	s->SetBoundingRadius(50.0f);
 	s->SetTexture(texID);
-	//s->SetModelScale(Vector3(5, 5, 5));
+	s->SetModelScale(Vector3(5, 5, 5));
 	
 	root->AddChild(s);
 
-	camera->SetPosition(s->GetWorldTransform().GetPositionVector());
+	camera->SetPosition(s->GetWorldTransform().GetPositionVector());*/
 
 	projMatrix = Matrix4::Perspective(1.0f, 15000.0f,
 		(float)width / (float)height, 45.0f);
@@ -115,13 +125,27 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 		SetTextureRepeating(tex, true);
 	}
 
-	light = new Light(dimensions * Vector3(0.5f, 2.0f, 0.5f),
-		Vector4(1, 1, 1, 1), dimensions.x * 1.5);
 	//clippingPlane = Plane(Vector3(0,-1,0), )
 	//GLuint reflect;
 //	GLuint refract;
 	
 	//glEnable(GL_CLIP_DISTANCE0); // Clipping plane for water
+
+	/*glGenTextures(1, &shadowTex);
+	glBindTexture(GL_TEXTURE_2D, shadowTex);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
+		SHADOWSIZE, SHADOWSIZE, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glGenFramebuffers(1, &shadowFBO);
+	glBindFramebuffer(GL_FRAMEBUFFER, shadowFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+		GL_TEXTURE_2D, shadowTex, 0);
+	glDrawBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);*/
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
@@ -145,15 +169,8 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 Renderer::~Renderer(void) {
 	delete triangle;
 	delete quad;
-	delete tree;
-	delete material;
-	delete shader;
-	delete terrainShader;
-	delete sceneShader;
-	delete skyboxShader;
 	delete camera;
 	delete light;
-	glDeleteTextures(1, &texture);
 	glDeleteTextures(1, &skybox);
 	glDeleteTextures(3, terrainTexs);
 	glDeleteTextures(3, terrainBumps);
@@ -162,6 +179,14 @@ Renderer::~Renderer(void) {
 		delete shader;
 	for (auto& mesh : sceneMeshes)
 		delete mesh;
+	for (auto it = meshes.begin(); it != meshes.end(); it++) {
+		delete it->second;
+	}
+	for (auto it = materials.begin(); it != materials.end(); it++) {
+		delete it->second;
+	}
+	glDeleteTextures(1, &shadowTex);
+	glDeleteFramebuffers(1, &shadowFBO);
 }
 
 void Renderer::SwitchToPerspective()
@@ -185,7 +210,7 @@ void Renderer::UpdateTextureMatrix(float value)
 }
 
 
-void Renderer::ToggleFiltering()
+/*void Renderer::ToggleFiltering()
 {
 	filtering != filtering;
 	glBindTexture(GL_TEXTURE_2D, texture);
@@ -194,7 +219,7 @@ void Renderer::ToggleFiltering()
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
 		filtering ? GL_LINEAR : GL_NEAREST);
 	glBindTexture(GL_TEXTURE_2D, 0);
-}
+}*/
 
 void Renderer::RenderScene() {
 	BuildNodeLists(root);
@@ -213,7 +238,7 @@ void Renderer::RenderScene() {
 		tree->DrawSubMesh(i);
 	}*/
 	
-	//DrawNodes();
+	DrawNodes();
 	ClearNodeLists();
 }
 
@@ -313,6 +338,27 @@ void Renderer::DrawHeightMap() {
 	glEnable(GL_BLEND);
 }
 
+void Renderer::DrawShadowScene() {
+	glBindFramebuffer(GL_FRAMEBUFFER, shadowFBO);
+
+	glClear(GL_DEPTH_BUFFER_BIT);
+	glViewport(0, 0, SHADOWSIZE, SHADOWSIZE);
+	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+	BindShader(shadowShader);
+	viewMatrix = Matrix4::BuildViewMatrix(
+		light->GetPosition(), Vector3(0, 0, 0));
+	projMatrix = Matrix4::Perspective(1, 100, 1, 45);
+	shadowMatrix = projMatrix * viewMatrix; // used later
+	for (int i = 0; i < 4; ++i) {
+		sceneMeshes[i]->Draw();
+	}
+	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+	glViewport(0, 0, width, height);
+
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
 void Renderer::BuildNodeLists(SceneNode* from)
 {
 	if (frameFrustum.InsideFrustum(*from)) {
@@ -360,19 +406,26 @@ void Renderer::DrawNode(SceneNode* n) {
 	if (n->GetMesh()) {
 		Shader* currentShader = n->GetShader();
 		BindShader(currentShader);
-		glUniform1i(glGetUniformLocation(currentShader->GetProgram(),
-			"diffuseTex"), 0);
+		UpdateShaderMatrices();
 		Matrix4 model = n->GetWorldTransform() *
 			Matrix4::Scale(n->GetModelScale());
 		glUniformMatrix4fv(
 			glGetUniformLocation(currentShader->GetProgram(),
 				"modelMatrix"), 1, false, model.values);
 
-     	texture = n->GetTexture();
+		glUniform1i(glGetUniformLocation(currentShader->GetProgram(),
+			"diffuseTex"), 0);
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture);
+		glBindTexture(GL_TEXTURE_2D, n->GetTexture());
+
+		glUniform1i(glGetUniformLocation(currentShader->GetProgram(),
+			"bumpTex"), 1);
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, n->GetBumpTexture());
 
 		glUniform4f(glGetUniformLocation(currentShader->GetProgram(), "plane"), 0, -1, 0, 25);
+
+		SetShaderLight(light);
 
 		/*glUniform4fv(glGetUniformLocation(sceneShader->GetProgram(),
 			"nodeColour"), 1, (float*)&n->GetColour());
@@ -387,21 +440,47 @@ void Renderer::DrawNode(SceneNode* n) {
 	}
 }
 
+void Renderer::CreateTrees() {
+	auto it = materials.find("rock");
+	if (it != materials.end()) {
+		MeshMaterial* material = it->second;
+		const MeshMaterialEntry* matEntry = material->GetMaterialForLayer(0);
+		const string* filename = nullptr;
+		matEntry->GetEntry("Diffuse", &filename);
+		string path = TEXTUREDIR + *filename;
+		GLuint texID = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
+			SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
+		matEntry->GetEntry("Bump", &filename);
+		path = TEXTUREDIR + *filename;
+		GLuint bumpID = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
+			SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
+		//matEntry->GetEntry("Bump", &filename);
+		// Mesh Extractor doesn't pick up bump map
+	/*	path = TEXTUREDIR"Coconut Palm Tree Pack/Textures/Coconut_Palm_Tree_normalspec_bark.psd";
+		GLuint bumpID = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
+			SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);*/
+		if (!texID || !bumpID) return;
 
-
-/*bool Renderer::SetTexture(GLuint texID, GLuint unit, const std::string& uniformName, Shader* s) {
-	if (uniformID < 0) {
-		std::cout << "Trying to bind invalid 2D texture uniform!\n"; //Put breakpoint on this!
-		return false;
+		Mesh* treeMesh = meshes.find("rock")->second;
+		treeMesh->GenerateNormals();
+		treeMesh->GenerateTangents();
+		for (int i = 0; i < 10; i++) {
+			SceneNode* s = new SceneNode(treeMesh, Vector4(1, 1, 1, 0.9));
+			s->SetMeshMaterial(material);
+			s->SetShader(shader);
+			s->SetBoundingRadius(50.0f);
+			s->SetTexture(texID);
+			s->SetBumpTexture(bumpID);
+			Vector3 pos = light->GetPosition();
+			s->SetTransform(Matrix4::Translation(
+				Vector3(100 * i, 20, 100 * i + (i*20))));
+			s->SetModelScale(Vector3(10, 10, 10));
+			
+			root->AddChild(s);
+		}
 	}
-	if (shader != s) {
-		std::cout << "Trying to set shader uniform on wrong shader!\n"; //Put breakpoint on this!
-		return false;
+	else {
+		return;
 	}
-	glActiveTexture(GL_TEXTURE0 + unit); //A neat trick!
-	glBindTexture(GL_TEXTURE_2D, texID);
-
-	glUniform1i(uniformID, unit);
-
-	return true;
-}*/
+	
+}

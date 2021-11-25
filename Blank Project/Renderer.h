@@ -7,6 +7,7 @@
 #include "../nclgl/HeightMap.h"
 #include "../nclgl/MeshMaterial.h"
 #include "../nclgl/Light.h"
+#include <string>
 #include "WaterFBO.h"
 
 class Renderer : public OGLRenderer {
@@ -32,21 +33,23 @@ public:
 	void DrawSkybox();
 	void DrawWater();
 	void DrawHeightMap();
+	void DrawShadowScene();
+	void CreateTrees();
 
 	int CreateFrameBuffer();
 
 protected:
+	std::map<string, Mesh*> meshes;
+	std::map<string, MeshMaterial*> materials;
 	SceneNode* root;
 	Mesh* triangle;
 	Mesh* quad;
-	Mesh* tree;
 	Shader* shader;
 	Shader* skyboxShader;
 	Shader* terrainShader;
 	Shader* sceneShader;
-	MeshMaterial* material;
+	Shader* shadowShader;
 	Camera* camera;
-	GLuint texture;
 	GLuint terrainTexs[3];
 	GLuint terrainBumps[3];
 	GLuint skybox;
@@ -63,6 +66,8 @@ protected:
 	WaterFBO* waterBuffer;
 	HeightMap* heightMap;
 	Light* light;
+	GLuint shadowFBO;
+	GLuint shadowTex;
 
 	vector<SceneNode*> transparentNodeList;
 	vector<SceneNode*> nodeList;

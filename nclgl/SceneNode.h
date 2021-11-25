@@ -42,6 +42,9 @@ public:
 	void SetTexture(GLuint tex) { texture = tex; }
 	GLuint GetTexture() const { return texture; }
 
+	void SetBumpTexture(GLuint tex) { bump = tex; }
+	GLuint GetBumpTexture() const { return bump; }
+
 	//void AddTexture(GLuint tex) { matTextures.emplace_back(tex); }
 	void SetTextures(vector<GLuint>* texs) { matTextures = texs; }
 	vector<GLuint>* GetMaterialTextures() { return matTextures; }
@@ -75,9 +78,11 @@ protected:
 	float distanceFromCamera;
 	float boundingRadius;
 	GLuint texture;
-	GLuint normal;
+	GLuint bump;
 	vector<GLuint>* matTextures;
 	MeshMaterial* material;
+
+	bool useShadows = false;
 
 };
 
