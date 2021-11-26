@@ -35,6 +35,7 @@ public:
 	void DrawHeightMap();
 	void DrawShadowScene();
 	void CreateTrees();
+	void DrawScene();
 
 	int CreateFrameBuffer();
 
@@ -49,6 +50,7 @@ protected:
 	Shader* terrainShader;
 	Shader* sceneShader;
 	Shader* shadowShader;
+	Shader* waterShader;
 	Camera* camera;
 	GLuint terrainTexs[3];
 	GLuint terrainBumps[3];

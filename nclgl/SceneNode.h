@@ -48,6 +48,9 @@ public:
 	//void AddTexture(GLuint tex) { matTextures.emplace_back(tex); }
 	void SetTextures(vector<GLuint>* texs) { matTextures = texs; }
 	vector<GLuint>* GetMaterialTextures() { return matTextures; }
+
+	void SetBumpTextures(vector<GLuint>* texs) { bumpTextures = texs; }
+	vector<GLuint>* GetBumpTextures() { return bumpTextures; }
 	
 	static bool CompareByCameraDistance(SceneNode * a, SceneNode * b) {
 		return (a->distanceFromCamera < b->distanceFromCamera) ? true : false;
@@ -80,6 +83,7 @@ protected:
 	GLuint texture;
 	GLuint bump;
 	vector<GLuint>* matTextures;
+	vector<GLuint>* bumpTextures;
 	MeshMaterial* material;
 
 	bool useShadows = false;

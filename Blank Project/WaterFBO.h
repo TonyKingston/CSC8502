@@ -7,7 +7,7 @@ public:
 	WaterFBO(GLuint reflectTex, GLuint refractTex);
 	~WaterFBO();
 
-	void BindRelfectBuffer();
+	void BindReflectBuffer();
 	void BindRefractBuffer();
 	void UnbindCurrentBuffer();
 

@@ -18,7 +18,7 @@ SceneNode::~SceneNode(void) {
 	for (unsigned int i = 0; i < children.size(); ++i) {
 		delete children[i];
 	}
-	delete[] matTextures;
+	//delete[] matTextures;
 }
 
 void SceneNode::AddChild(SceneNode* s)
@@ -50,12 +50,10 @@ void SceneNode::Draw(const OGLRenderer& r)
 	if (mesh) {
 		if (mesh->GetSubMeshCount() > 0) {
 			for (int i = 0; i < mesh->GetSubMeshCount(); ++i) {
+				glActiveTexture(GL_TEXTURE0);
+				glBindTexture(GL_TEXTURE_2D, (*matTextures)[i]);
 				glActiveTexture(GL_TEXTURE1);
-				glBindTexture(GL_TEXTURE_2D, matTextures->at(i));
-			/*	glUniform1i(glGetUniformLocation(shader->GetProgram(),
-					"bumpTex"), 1);
-				glActiveTexture(GL_TEXTURE1);
-				glBindTexture(GL_TEXTURE_2D, bump);*/
+				glBindTexture(GL_TEXTURE_2D, (*bumpTextures)[i]);
 				mesh->DrawSubMesh(i);
 			}
 		}
