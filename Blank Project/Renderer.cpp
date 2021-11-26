@@ -48,6 +48,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 		}
 	}
 
+	// Textures
 	skybox = SOIL_load_OGL_cubemap(TEXTUREDIR"rusted_west.jpg", TEXTUREDIR"rusted_east.jpg",
 		TEXTUREDIR"rusted_up.jpg", TEXTUREDIR"rusted_down.jpg",
 		TEXTUREDIR"rusted_south.jpg", TEXTUREDIR"rusted_north.jpg",
@@ -66,6 +67,11 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
 	terrainBumps[2] = SOIL_load_OGL_texture(TEXTUREDIR "rock_Normal.PNG",
 		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+
+	waterDudv = SOIL_load_OGL_texture(TEXTUREDIR "water_dudv.PNG",
+		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+
+	if (!waterDudv) return;
 
 	//font = SOIL_load_OGL_texture(TEXTUREDIR"tahoma.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_COMPRESS_TO_DXT);
 	meshes.insert({ "tree", Mesh::LoadFromMeshFile("Coconut_Palm_Tree01.msh") });
@@ -159,6 +165,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 		}
 		SetTextureRepeating(tex, true);
 	}
+	//SetTextureRepeating(waterDudv, true);
 
 	clippingPlane = Plane(Vector3(0, 1, 0), -waterHeight);
 	GLuint reflect;
@@ -205,6 +212,7 @@ Renderer::~Renderer(void) {
 	glDeleteTextures(3, terrainTexs);
 	glDeleteTextures(3, terrainBumps);
 	glDeleteTextures(1, &font);
+	glDeleteTextures(1, &waterDudv);
 	auto it = root->GetChildIteratorStart();
 	it++;
 	delete [] (*it)->GetMaterialTextures();
@@ -264,23 +272,30 @@ void Renderer::RenderScene() {
 	Vector3 cameraPos = camera->GetPosition();
 	camera->SetPosition(Vector3(cameraPos.x, cameraPos.y - distance, cameraPos.z));
 	camera->SetPitch(-camera->GetPitch());
+	viewMatrix = camera->BuildViewMatrix();
 	waterBuffer->BindReflectBuffer();
 //	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	clippingPlane.SetNormal(Vector3(0, 1, 0)); 
 	clippingPlane.SetDistance(-waterHeight);
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	DrawSkybox();
 	DrawHeightMap();
 	waterBuffer->UnbindCurrentBuffer();
 	cameraPos = camera->GetPosition();
 	camera->SetPosition(Vector3(cameraPos.x, cameraPos.y + distance, cameraPos.z));
 	camera->SetPitch(-camera->GetPitch());
+	viewMatrix = camera->BuildViewMatrix();
 
 	waterBuffer->BindRefractBuffer();
 	clippingPlane.SetNormal(Vector3(0, -1, 0));
 	clippingPlane.SetDistance(waterHeight);
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	DrawSkybox();
 	DrawHeightMap();
 	waterBuffer->UnbindCurrentBuffer();
 
 	glDisable(GL_CLIP_DISTANCE0);
+	DrawSkybox();
 	DrawHeightMap();
 	DrawWater();
 	//BindShader(terrainShader);
@@ -323,7 +338,7 @@ void Renderer::DrawWater() {
 
 
 	//Matrix4 model = Matrix4::Translation(Vector3(0, 0, -5)) * Matrix4::Scale(Vector3(10, 10, 10));
-	Matrix4 model = Matrix4::Translation(Vector3(hSize.x * 0.5, 25, hSize.z * 0.5)) * Matrix4::Scale(hSize * 0.5f) * Matrix4::Rotation(90, Vector3(1, 0, 0));
+	Matrix4 model = Matrix4::Translation(Vector3(hSize.x * 0.5, 25, hSize.z * 0.5)) * Matrix4::Scale(hSize * 0.5f); // Matrix4::Rotation(90, Vector3(1, 0, 0));
 //	Matrix4 model = Matrix4::Translation(Vector3(0, 25, 0)) * Matrix4::Scale(Vector3(200,200,200)) * Matrix4::Rotation(90, Vector3(0, 1, 0));
 	glUniformMatrix4fv(
 		glGetUniformLocation(waterShader->GetProgram(),
@@ -338,6 +353,14 @@ void Renderer::DrawWater() {
 		"refractTex"), 1);
 	glActiveTexture(GL_TEXTURE1);
 	glBindTexture(GL_TEXTURE_2D, waterBuffer->GetRefractTexture());
+
+	glUniform1i(glGetUniformLocation(waterShader->GetProgram(),
+		"dudvTex"), 2);
+	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, waterDudv);
+
+	glUniform3fv(glGetUniformLocation(waterShader->GetProgram(),
+		"cameraPos"), 1, (float*)&camera->GetPosition());
 
 	//modelMatrix.ToIdentity();
 	quad->Draw();
@@ -355,7 +378,7 @@ void Renderer::DrawSkybox() {
 void Renderer::DrawHeightMap() {
 	glDisable(GL_BLEND);
 //	waterBuffer->BindRefractBuffer();
-	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+	//glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	BindShader(terrainShader);
 	UpdateShaderMatrices();
 	//GLuint texArray[MAX_TEXTURES];

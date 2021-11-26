@@ -54,6 +54,7 @@ protected:
 	Camera* camera;
 	GLuint terrainTexs[3];
 	GLuint terrainBumps[3];
+	GLuint waterDudv;
 	GLuint skybox;
 	GLuint font;
 	vector<Shader*> sceneShaders;
