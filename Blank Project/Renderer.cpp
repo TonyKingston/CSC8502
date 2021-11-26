@@ -107,7 +107,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	//camera->SetPosition(dimensions * Vector3(0.5, 2, 0.5));
 
 	root = new SceneNode();
-	//CreateTrees();
+	CreateTrees();
 	/*vector <GLuint>* matTextures = new vector<GLuint>(0);
 	Mesh * rock = meshes.find("rock")->second;
 	MeshMaterial* material = materials.find("rock")->second;
@@ -267,19 +267,19 @@ void Renderer::RenderScene() {
 	SortNodeLists();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_CLIP_DISTANCE0);
-	//DrawSkybox();
+	
 	float distance = 2 * (camera->GetPosition().y - waterHeight);
 	Vector3 cameraPos = camera->GetPosition();
 	camera->SetPosition(Vector3(cameraPos.x, cameraPos.y - distance, cameraPos.z));
 	camera->SetPitch(-camera->GetPitch());
 	viewMatrix = camera->BuildViewMatrix();
 	waterBuffer->BindReflectBuffer();
-//	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	clippingPlane.SetNormal(Vector3(0, 1, 0)); 
 	clippingPlane.SetDistance(-waterHeight);
-	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	DrawSkybox();
 	DrawHeightMap();
+	DrawNodes();
 	waterBuffer->UnbindCurrentBuffer();
 	cameraPos = camera->GetPosition();
 	camera->SetPosition(Vector3(cameraPos.x, cameraPos.y + distance, cameraPos.z));
@@ -287,17 +287,17 @@ void Renderer::RenderScene() {
 	viewMatrix = camera->BuildViewMatrix();
 
 	waterBuffer->BindRefractBuffer();
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	clippingPlane.SetNormal(Vector3(0, -1, 0));
 	clippingPlane.SetDistance(waterHeight);
-	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	DrawSkybox();
 	DrawHeightMap();
+	DrawNodes();
 	waterBuffer->UnbindCurrentBuffer();
 
+	// Draw regular scene
 	glDisable(GL_CLIP_DISTANCE0);
-	DrawSkybox();
-	DrawHeightMap();
-	DrawWater();
+	DrawScene();
 	//BindShader(terrainShader);
 	
 
@@ -313,7 +313,10 @@ void Renderer::RenderScene() {
 }
 
 void Renderer::DrawScene() {
+	DrawSkybox();
 	DrawHeightMap();
+	DrawWater();
+	DrawNodes();
 }
 
 void Renderer::UpdateScene(float dt) {
