@@ -35,7 +35,7 @@ public:
 	void DrawHeightMap();
 	void DrawShadowScene();
 	void CreateTrees();
-	void DrawScene();
+	void DrawScene(bool drawWater);
 
 	int CreateFrameBuffer();
 
@@ -64,6 +64,10 @@ protected:
 	bool filtering;
 	bool repeating;
 	float fov;
+	// For dudvu map sampling
+	float waterMove;
+	float waveSpeed;
+
 	Vector3 position;
 	Frustum frameFrustum;
 	WaterFBO* waterBuffer;

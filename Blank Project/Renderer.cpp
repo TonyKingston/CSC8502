@@ -191,15 +191,18 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-	glEnable(GL_BLEND);
+	//glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	//glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
+
 
 	glGenTextures(1, &reflect);
 	glGenTextures(1, &refract);
 	waterBuffer = new WaterFBO(reflect, refract);
 
+	waterMove = 0.0f;
+	waveSpeed = 0.03f;
 	init = true;
 }
 
@@ -277,9 +280,7 @@ void Renderer::RenderScene() {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	clippingPlane.SetNormal(Vector3(0, 1, 0)); 
 	clippingPlane.SetDistance(-waterHeight);
-	DrawSkybox();
-	DrawHeightMap();
-	DrawNodes();
+	DrawScene(false);
 	waterBuffer->UnbindCurrentBuffer();
 	cameraPos = camera->GetPosition();
 	camera->SetPosition(Vector3(cameraPos.x, cameraPos.y + distance, cameraPos.z));
@@ -290,14 +291,12 @@ void Renderer::RenderScene() {
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	clippingPlane.SetNormal(Vector3(0, -1, 0));
 	clippingPlane.SetDistance(waterHeight);
-	DrawSkybox();
-	DrawHeightMap();
-	DrawNodes();
+	DrawScene(false);
 	waterBuffer->UnbindCurrentBuffer();
 
 	// Draw regular scene
 	glDisable(GL_CLIP_DISTANCE0);
-	DrawScene();
+	DrawScene(true);
 	//BindShader(terrainShader);
 	
 
@@ -308,15 +307,16 @@ void Renderer::RenderScene() {
 		tree->DrawSubMesh(i);
 	}*/
 	
-//	DrawNodes();
 	ClearNodeLists();
 }
 
-void Renderer::DrawScene() {
+void Renderer::DrawScene(bool drawWater) {
 	DrawSkybox();
 	DrawHeightMap();
-	DrawWater();
-	DrawNodes();
+	if (drawWater) {
+		DrawWater();
+	}
+	//DrawNodes();
 }
 
 void Renderer::UpdateScene(float dt) {
@@ -324,6 +324,8 @@ void Renderer::UpdateScene(float dt) {
 	viewMatrix = camera->BuildViewMatrix();
 	frameFrustum.FromMatrix(projMatrix * viewMatrix);
 	root->Update(dt);
+	waterMove += waveSpeed * dt;
+	waterMove = fmod(waterMove, 1);
 }
 
 void Renderer::DrawWater() {
@@ -361,6 +363,9 @@ void Renderer::DrawWater() {
 		"dudvTex"), 2);
 	glActiveTexture(GL_TEXTURE2);
 	glBindTexture(GL_TEXTURE_2D, waterDudv);
+
+	glUniform1f(glGetUniformLocation(waterShader->GetProgram(),
+		"waterMove"), waterMove);
 
 	glUniform3fv(glGetUniformLocation(waterShader->GetProgram(),
 		"cameraPos"), 1, (float*)&camera->GetPosition());
