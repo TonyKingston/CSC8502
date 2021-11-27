@@ -7,7 +7,10 @@ uniform vec4 plane;
 in vec3 position;
 in vec4 colour;
 in vec3 normal;
-in vec4 tangent;in vec2 texCoord;out Vertex {
+in vec4 tangent;
+in vec2 texCoord;
+
+out Vertex {
  vec4 colour;
  vec2 texCoord;
  vec3 normal;
@@ -15,7 +18,9 @@ in vec4 tangent;in vec2 texCoord;out Vertex {
  vec3 binormal;
  vec3 worldPos;
  vec3 position;
-} OUT;void main ( void ) {
+} OUT;
+
+void main ( void ) {
 
  vec4 worldPos = ( modelMatrix * vec4 ( position ,1));
  gl_ClipDistance[0] = dot(worldPos,plane);
@@ -35,4 +40,5 @@ in vec4 tangent;in vec2 texCoord;out Vertex {
  OUT.worldPos = worldPos.xyz;
 
  gl_Position = ( projMatrix * viewMatrix ) * worldPos;
-}
+}
+

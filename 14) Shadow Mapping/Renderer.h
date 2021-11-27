@@ -26,7 +26,8 @@ protected:
 	Shader * shadowShader;
 	
 	vector < Mesh* > sceneMeshes;
-	vector < Matrix4 > sceneTransforms;
+	vector < Matrix4 > sceneTransforms;
+
 	Camera* camera;
 	Light* light;
 };

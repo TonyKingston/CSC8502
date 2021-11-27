@@ -3,6 +3,8 @@
 
 const int MAX_TEXTURES = 3;
 const int waterHeight = 25;
+const float nearPlane = 1.0f;
+const float farPlane = 15000.0f;
 #define SHADOWSIZE 2048
 
 Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
@@ -12,6 +14,8 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	Vector3 dimensions = heightMap->GetHeightmapSize();
 	light = new Light(dimensions * Vector3(0.5f, 2.0f, 0.5f),
 		Vector4(1, 1, 1, 1), dimensions.x * 1.5);
+	/*light = new Light(Vector3(200,dimensions.y,200),
+		Vector4(1, 1, 1, 1), dimensions.x * 1.5);*/
 
 	//GLuint reflect = SOIL_load_OGL_texture(TEXTUREDIR"brick.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, 0);
 	//GLuint refract = SOIL_load_OGL_texture(TEXTUREDIR"water.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, 0);
@@ -68,10 +72,14 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	terrainBumps[2] = SOIL_load_OGL_texture(TEXTUREDIR "rock_Normal.PNG",
 		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
 
+	waterBump = SOIL_load_OGL_texture(TEXTUREDIR "waterNormal.PNG",
+		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
+
+
 	waterDudv = SOIL_load_OGL_texture(TEXTUREDIR "water_dudv.PNG",
 		SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS);
 
-	if (!waterDudv) return;
+	if (!waterBump || !waterDudv) return;
 
 	//font = SOIL_load_OGL_texture(TEXTUREDIR"tahoma.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, SOIL_FLAG_COMPRESS_TO_DXT);
 	meshes.insert({ "tree", Mesh::LoadFromMeshFile("Coconut_Palm_Tree01.msh") });
@@ -149,7 +157,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 
 	camera->SetPosition(s->GetWorldTransform().GetPositionVector());*/
 
-	projMatrix = Matrix4::Perspective(1.0f, 15000.0f,
+	projMatrix = Matrix4::Perspective(nearPlane, farPlane,
 		(float)width / (float)height, 45.0f);
 
 	
@@ -191,7 +199,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-	//glEnable(GL_BLEND);
+	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	//glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
@@ -277,9 +285,10 @@ void Renderer::RenderScene() {
 	camera->SetPitch(-camera->GetPitch());
 	viewMatrix = camera->BuildViewMatrix();
 	waterBuffer->BindReflectBuffer();
+	glViewport(0, 0, 1280, 720);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	clippingPlane.SetNormal(Vector3(0, 1, 0)); 
-	clippingPlane.SetDistance(-waterHeight);
+	clippingPlane.SetDistance(-waterHeight + 0.5f); // Offset to avoid edge of reflection looking strange
 	DrawScene(false);
 	waterBuffer->UnbindCurrentBuffer();
 	cameraPos = camera->GetPosition();
@@ -288,6 +297,7 @@ void Renderer::RenderScene() {
 	viewMatrix = camera->BuildViewMatrix();
 
 	waterBuffer->BindRefractBuffer();
+	glViewport(0, 0, 1280, 720);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	clippingPlane.SetNormal(Vector3(0, -1, 0));
 	clippingPlane.SetDistance(waterHeight);
@@ -316,7 +326,7 @@ void Renderer::DrawScene(bool drawWater) {
 	if (drawWater) {
 		DrawWater();
 	}
-	//DrawNodes();
+	DrawNodes();
 }
 
 void Renderer::UpdateScene(float dt) {
@@ -360,15 +370,34 @@ void Renderer::DrawWater() {
 	glBindTexture(GL_TEXTURE_2D, waterBuffer->GetRefractTexture());
 
 	glUniform1i(glGetUniformLocation(waterShader->GetProgram(),
-		"dudvTex"), 2);
+		"bumpTex"), 2);
 	glActiveTexture(GL_TEXTURE2);
+	glBindTexture(GL_TEXTURE_2D, waterBump);
+
+	glUniform1i(glGetUniformLocation(waterShader->GetProgram(),
+		"dudvTex"), 3);
+	glActiveTexture(GL_TEXTURE3);
 	glBindTexture(GL_TEXTURE_2D, waterDudv);
+
+	glUniform1i(glGetUniformLocation(waterShader->GetProgram(),
+		"depthTex"), 4);
+	glActiveTexture(GL_TEXTURE4);
+	glBindTexture(GL_TEXTURE_2D, waterBuffer->GetRefractDepthTexture());
+
 
 	glUniform1f(glGetUniformLocation(waterShader->GetProgram(),
 		"waterMove"), waterMove);
 
+	glUniform1f(glGetUniformLocation(waterShader->GetProgram(),
+		"near"), nearPlane);
+
+	glUniform1f(glGetUniformLocation(waterShader->GetProgram(),
+		"far"), farPlane);
+
 	glUniform3fv(glGetUniformLocation(waterShader->GetProgram(),
 		"cameraPos"), 1, (float*)&camera->GetPosition());
+
+	SetShaderLight(light);
 
 	//modelMatrix.ToIdentity();
 	quad->Draw();
@@ -506,10 +535,10 @@ void Renderer::DrawNode(SceneNode* n) {
 		Shader* currentShader = n->GetShader();
 		BindShader(currentShader);
 		UpdateShaderMatrices();
-		glUniform1i(glGetUniformLocation(shader->GetProgram(),
+		glUniform1i(glGetUniformLocation(currentShader->GetProgram(),
 			"diffuseTex"), 0);
 
-		glUniform1i(glGetUniformLocation(shader->GetProgram(),
+		glUniform1i(glGetUniformLocation(currentShader->GetProgram(),
 			"bumpTex"), 1);
 
 		//UpdateShaderMatrices();
@@ -526,9 +555,10 @@ void Renderer::DrawNode(SceneNode* n) {
 		/*glActiveTexture(GL_TEXTURE1);
 		glBindTexture(GL_TEXTURE_2D, n->GetBumpTexture());*/
 
-	//	glUniform4f(glGetUniformLocation(currentShader->GetProgram(), "plane"), 0, -1, 0, 25);
+		Vector3 norm = clippingPlane.GetNormal();
+		glUniform4f(glGetUniformLocation(currentShader->GetProgram(), "plane"), norm.x, norm.y, norm.z, clippingPlane.GetDistance());
 
-		glUniform3fv(glGetUniformLocation(terrainShader->GetProgram(),
+		glUniform3fv(glGetUniformLocation(currentShader->GetProgram(),
 			"cameraPos"), 1, (float*)&camera->GetPosition());
 
 		SetShaderLight(light);
@@ -600,7 +630,7 @@ void Renderer::CreateTrees() {
 			//s->SetBumpTexture(bumpID);
 			Vector3 pos = light->GetPosition();
 			s->SetTransform(Matrix4::Translation(
-				Vector3(100 * i, 20, 100 * i + (i*20))));
+				Vector3(100 * i, 25, 100 * i + (i*20))));
 			s->SetModelScale(Vector3(10, 10, 10));
 			
 			root->AddChild(s);
