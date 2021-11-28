@@ -1,10 +1,10 @@
 #include "WaterFBO.h"
 #include "../nclgl/Window.h"
 
-WaterFBO::WaterFBO(GLuint reflectT, GLuint refractT)
+WaterFBO::WaterFBO()
 {
-	reflectTex = reflectT;
-	refractTex = refractT;
+	glGenTextures(1, &reflectTex);
+	glGenTextures(1, &refractTex);
 
 	if (!reflectTex || !refractTex) {
 		return;

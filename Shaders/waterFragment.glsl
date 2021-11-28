@@ -85,6 +85,7 @@ void main(void) {
 
  vec4 normalMapColour = texture(bumpTex, distort);
  vec3 bumpNormal = normalize(vec3(normalMapColour.r * 2.0 - 1.0, normalMapColour.b * 3.0, normalMapColour.g * 2.0 -1.0));
+ vec3 reflectDir = reflect ( -viewDir , normalize ( IN.normal));
 
  vec3 fromLight = IN.worldPos.xyz - lightPos;
  vec3 reflectedLight = reflect(normalize(fromLight), bumpNormal);
@@ -95,7 +96,10 @@ void main(void) {
   // Fresnel
  float refractValue = dot(viewDir, bumpNormal);
  refractValue = pow(refractValue, 2.0); // Make the water a bit more reflective
+
  reflectColour += vec4(specularHighlights, 0.0);
+
+ //reflectColour = texture(reflectTex, reflectDir.xy);
  vec4 texColour = mix(reflectColour, refractColour, refractValue);
  vec3 surface = texColour.rgb * lightColour.rgb;
  //texColour = mix(texColour, vec4(0,0.2,0.5,1.0), 0.2);
@@ -107,6 +111,7 @@ void main(void) {
  fragColour.rgb += surface * 0.1f;
  fragColour.a = texColour.a;*/
 // fragColour.a = clamp(waterDepth / 5.0, 0.0, 1.0);
+  fragColour = reflectColour;
 
 }
 

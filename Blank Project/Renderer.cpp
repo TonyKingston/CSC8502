@@ -86,29 +86,8 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	materials.insert({ "tree", new MeshMaterial("Coconut_Palm_Tree01.mat") });
 	meshes.insert({ "rock", Mesh::LoadFromMeshFile("Rock_05.msh") });
 	materials.insert({ "rock", new MeshMaterial("Rock_05.mat") });
-
-//	vector <GLuint>* matTextures = new vector<GLuint>(0);
-	/*for (int i = 0; i < tree->GetSubMeshCount(); ++i) {
-		const MeshMaterialEntry* matEntry =
-			material->GetMaterialForLayer(i);
-
-		const string* filename = nullptr;
-		matEntry->GetEntry("Diffuse", &filename);
-		string path = TEXTUREDIR + *filename;
-		GLuint texID = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
-			SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
-		matTextures->emplace_back(texID);
-
-	}*/
-	//if (!reflect || !refract || !skybox) return;
-	/*const MeshMaterialEntry* matEntry =
-		material->GetMaterialForLayer(0);
-	const string* filename = nullptr;
-	matEntry->GetEntry("Diffuse", &filename);
-	string path = TEXTUREDIR + *filename;
-	GLuint texID = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
-		SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
-	if (!texID) return;*/
+	meshes.insert({ "skeleton",  Mesh::LoadFromMeshFile("Skeleton.msh") });
+	materials.insert({ "skeleton", new MeshMaterial("Skeleton.mat") });
 
 	camera = new Camera();
 	
@@ -176,9 +155,6 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	//SetTextureRepeating(waterDudv, true);
 
 	clippingPlane = Plane(Vector3(0, 1, 0), -waterHeight);
-	GLuint reflect;
-	GLuint refract;
-	
 	glEnable(GL_CLIP_DISTANCE0); // Clipping plane for water
 
 	/*glGenTextures(1, &shadowTex);
@@ -204,10 +180,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	//glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
-
-	glGenTextures(1, &reflect);
-	glGenTextures(1, &refract);
-	waterBuffer = new WaterFBO(reflect, refract);
+	waterBuffer = new WaterFBO();
 
 	waterMove = 0.0f;
 	waveSpeed = 0.03f;

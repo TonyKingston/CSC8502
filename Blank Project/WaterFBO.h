@@ -4,7 +4,7 @@
 class WaterFBO
 {
 public:
-	WaterFBO(GLuint reflectTex, GLuint refractTex);
+	WaterFBO();
 	~WaterFBO();
 
 	void BindReflectBuffer();

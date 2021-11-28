@@ -1,7 +1,7 @@
 #include "Renderer.h"
 
 Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
-	heightMap = new HeightMap(TEXTUREDIR"island.png");
+	heightMap = new HeightMap(TEXTUREDIR"noise.png");
 	quad = Mesh::GenerateQuad();
 
 	camera = new Camera(-45, 0.0f, heightMap->GetHeightmapSize() * Vector3(0.5f, 5.0f, 0.5f));
@@ -45,10 +45,10 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 		(float)width / (float)height, 45.0f);
 
 	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
+	//glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
-	glEnable(GL_CULL_FACE);
+	//glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 	waterRotate = 0.0f;
 	waterCycle = 0.0f;
@@ -98,7 +98,7 @@ void Renderer::RenderScene() {
 void Renderer::DrawHeightMap()
 {
 	BindShader(lightShader);
-	SetShaderLight(*light);
+	SetShaderLight(light);
 	glUniform3fv(glGetUniformLocation(lightShader->GetProgram(),
 	  "cameraPos"), 1, (float*)& camera->GetPosition());
 	glUniform1i(glGetUniformLocation(
@@ -123,7 +123,7 @@ void Renderer::DrawHeightMap()
 void Renderer::DrawWater()
 {
 	BindShader(reflectShader);
-	glUniform3fv(glGetUniformLocation(lightShader->GetProgram(),
+	glUniform3fv(glGetUniformLocation(reflectShader->GetProgram(),
 		"cameraPos"), 1, (float*)&camera->GetPosition());
 
 	glUniform1i(glGetUniformLocation(
