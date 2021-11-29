@@ -224,36 +224,57 @@ void OGLRenderer::SetTextureRepeating(GLuint target, bool repeating) {
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+void OGLRenderer::SetTextureFiltering(GLuint target, bool filtering) {
+	glBindTexture(GL_TEXTURE_2D, target);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+		filtering ? GL_LINEAR : GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+		filtering ? GL_LINEAR : GL_NEAREST);
+	glBindTexture(GL_TEXTURE_2D, 0);
+}
+
 void OGLRenderer::SetShaderLight(Light* l) {
-	glUniform4fv(glGetUniformLocation(currentShader->GetProgram(), "lightColour"), 1, (float*)&l->GetColour());
-	glUniform3fv(glGetUniformLocation(currentShader->GetProgram(), "lightPos"), 1, (float*)&l ->GetPosition());
-	glUniform1f(glGetUniformLocation(currentShader->GetProgram(), "lightRadius"), l->GetRadius());
-	glUniform3fv(glGetUniformLocation(currentShader->GetProgram(), "lightDirection"), 1, (float*)&l ->GetDirection());
-	glUniform1f(glGetUniformLocation(currentShader->GetProgram(), "lightAngle"), DegToRad(l->GetAngle()));
-	
+	if (currentShader) {
+		glUniform4fv(glGetUniformLocation(currentShader->GetProgram(), "lightColour"), 1, (float*)&l->GetColour());
+		glUniform3fv(glGetUniformLocation(currentShader->GetProgram(), "lightPos"), 1, (float*)&l->GetPosition());
+		glUniform1f(glGetUniformLocation(currentShader->GetProgram(), "lightRadius"), l->GetRadius());
+		glUniform3fv(glGetUniformLocation(currentShader->GetProgram(), "lightDirection"), 1, (float*)&l->GetDirection());
+		glUniform1f(glGetUniformLocation(currentShader->GetProgram(), "lightAngle"), DegToRad(l->GetAngle()));
+		glUniform1f(glGetUniformLocation(currentShader->GetProgram(), "linear"), l->GetLinearCoefficient());
+		glUniform1f(glGetUniformLocation(currentShader->GetProgram(), "quadratic"), l->GetQuadraticCoefficient());
+	}
 }
 
 void OGLRenderer::SetShaderLights(vector<Light*> lights)
 {
-	vector<Vector4> lightColours;
-	vector<Vector3> lightPositions;
-	vector<float> lightRadii;
-	vector<Vector3> lightDirections;
-	vector<float> lightAngles;
+	if (currentShader) {
+		vector<Vector4> lightColours;
+		vector<Vector3> lightPositions;
+		vector<float> lightRadii;
+		vector<Vector3> lightDirections;
+		vector<float> lightAngles;
+		vector<float> lightLinear;
+		vector<float> lightQuadratic;
 
-	for (auto l : lights) {
-		lightPositions.push_back(l->GetPosition());
-		lightColours.push_back(l->GetColour());
-		lightRadii.push_back(l->GetRadius());
-		lightDirections.push_back(l->GetDirection());
-		lightAngles.push_back(DegToRad(l->GetAngle()));
+		for (auto l : lights) {
+			lightPositions.push_back(l->GetPosition());
+			lightColours.push_back(l->GetColour());
+			lightRadii.push_back(l->GetRadius());
+			lightDirections.push_back(l->GetDirection());
+			lightAngles.push_back(DegToRad(l->GetAngle()));
+			lightLinear.push_back(l->GetLinearCoefficient());
+			lightQuadratic.push_back(l->GetQuadraticCoefficient());
+		}
+
+		glUniform4fv(glGetUniformLocation(currentShader->GetProgram(), "lightColour"), lights.size(), (float*)lightColours.data());
+		glUniform3fv(glGetUniformLocation(currentShader->GetProgram(), "lightPos"), lights.size(), (float*)lightPositions.data());
+		glUniform1fv(glGetUniformLocation(currentShader->GetProgram(), "lightRadius"), lights.size(), lightRadii.data());
+		glUniform3fv(glGetUniformLocation(currentShader->GetProgram(), "lightDirection"), lights.size(), (float*)lightDirections.data());
+		glUniform1fv(glGetUniformLocation(currentShader->GetProgram(), "lightAngle"), lights.size(), lightAngles.data());
+		glUniform1fv(glGetUniformLocation(currentShader->GetProgram(), "linear"), lights.size(), lightLinear.data());
+		glUniform1fv(glGetUniformLocation(currentShader->GetProgram(), "quadratic"), lights.size(), lightQuadratic.data());
 	}
-
-	glUniform4fv(glGetUniformLocation(currentShader->GetProgram(), "lightColour"), lights.size(), (float*)lightColours.data());
-	glUniform3fv(glGetUniformLocation(currentShader->GetProgram(), "lightPos"), lights.size(), (float*)lightPositions.data());
-	glUniform1fv(glGetUniformLocation(currentShader->GetProgram(), "lightRadius"), lights.size(), lightRadii.data());
-	glUniform3fv(glGetUniformLocation(currentShader->GetProgram(), "lightDirection"), lights.size(), (float*)lightDirections.data());
-	glUniform1fv(glGetUniformLocation(currentShader->GetProgram(), "lightAngle"), lights.size(), lightAngles.data() );
+	
 }
 
 #ifdef OPENGL_DEBUGGING

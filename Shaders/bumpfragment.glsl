@@ -8,6 +8,8 @@ uniform vec3 lightPos;
 uniform float lightRadius;
 uniform vec3 lightDirection;
 uniform float lightAngle;
+uniform float linear;
+uniform float quadratic;
 
 in Vertex {
  vec3 colour;
@@ -35,7 +37,8 @@ void main ( void ) {
   } else {
     incident = normalize(lightPos - IN.worldPos);
 	float distance = length ( lightPos - IN.worldPos );
-	attenuation = 1.0f - clamp ( distance / lightRadius ,0.0 ,1.0);
+	//attenuation = 1.0f - clamp ( distance / lightRadius ,0.0 ,1.0); // Linear attenuation
+	attenuation = 1/(1.0f + linear + distance + quadratic * pow(distance, 2)); // Constant-linear-quadratic falloff attenuation
   }
 
  vec3 viewDir = normalize ( cameraPos - IN.worldPos );

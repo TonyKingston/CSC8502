@@ -14,11 +14,10 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	Vector3 dimensions = heightMap->GetHeightmapSize();
 	light = new Light(dimensions * Vector3(0.5f, 2.0f, 0.5f),
 		Vector4(1, 1, 1, 1), dimensions.x * 1.5);
+	light->SetLinearCoefficient(0.0014);
+	light->SetQuadraticCoefficient(0.000007);
 	/*light = new Light(Vector3(200,dimensions.y,200),
 		Vector4(1, 1, 1, 1), dimensions.x * 1.5);*/
-
-	//GLuint reflect = SOIL_load_OGL_texture(TEXTUREDIR"brick.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, 0);
-	//GLuint refract = SOIL_load_OGL_texture(TEXTUREDIR"water.tga", SOIL_LOAD_AUTO, SOIL_CREATE_NEW_ID, 0);
 
 	// Shaders
 //	shader = new Shader("MatrixVertex.glsl", "colourFragment.glsl");
@@ -129,12 +128,14 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 			return;
 		}
 		SetTextureRepeating(tex, true);
+	//	SetTextureFiltering(tex, true);
 	}
 	for (auto tex : terrainBumps) {
 		if (!tex) {
 			return;
 		}
 		SetTextureRepeating(tex, true);
+	//	SetTextureFiltering(tex, true);
 	}
 	//SetTextureRepeating(waterDudv, true);
 
@@ -223,17 +224,6 @@ void Renderer::UpdateTextureMatrix(float value)
 	textureMatrix = pop * rotation * push;
 }
 
-
-/*void Renderer::ToggleFiltering()
-{
-	filtering != filtering;
-	glBindTexture(GL_TEXTURE_2D, texture);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-		filtering ? GL_LINEAR : GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-		filtering ? GL_LINEAR : GL_NEAREST);
-	glBindTexture(GL_TEXTURE_2D, 0);
-}*/
 
 void Renderer::RenderScene() {
 	BuildNodeLists(root);
@@ -377,7 +367,6 @@ void Renderer::DrawSkybox() {
 
 void Renderer::DrawHeightMap() {
 	glDisable(GL_BLEND);
-//	waterBuffer->BindRefractBuffer();
 	//glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	BindShader(terrainShader);
 	UpdateShaderMatrices();
@@ -425,7 +414,6 @@ void Renderer::DrawHeightMap() {
 	//textureMatrix.ToIdentity();
 	
 	heightMap->Draw();
-//	waterBuffer->UnbindCurrentBuffer();
 	glEnable(GL_BLEND);
 }
 
@@ -440,7 +428,7 @@ void Renderer::DrawShadowScene() {
 	viewMatrix = Matrix4::BuildViewMatrix(
 		light->GetPosition(), Vector3(0, 0, 0));
 	projMatrix = Matrix4::Perspective(1, 100, 1, 45);
-	shadowMatrix = projMatrix * viewMatrix; // used later
+	shadowMatrix = projMatrix * viewMatrix;
 	DrawNodes();
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 	glViewport(0, 0, width, height);
@@ -620,7 +608,7 @@ vector<GLuint>* Renderer::GetTexturesForMesh(string obj)
 	auto meshIt = meshes.find(obj);
 	auto matIt = materials.find(obj);
 	if (meshIt == meshes.end() || matIt == materials.end()) {
-		return;
+		return NULL;
 	}
 	Mesh* mesh = meshIt->second;
 	MeshMaterial* material = matIt->second;
@@ -644,7 +632,7 @@ vector<GLuint>* Renderer::GetBumpsForMesh(string obj)
 	auto meshIt = meshes.find(obj);
 	auto matIt = materials.find(obj);
 	if (meshIt == meshes.end() || matIt == materials.end()) {
-		return;
+		return NULL;
 	}
 	Mesh* mesh = meshIt->second;
 	MeshMaterial* material = matIt->second;

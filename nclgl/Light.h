@@ -45,6 +45,12 @@ public:
 
 	float GetAngle() const { return maxAngle; }
 	void SetAngle(float ang) { maxAngle = ang; }
+
+	float GetLinearCoefficient() { return linear; }
+	void SetLinearCoefficient(float val) { linear = val; }
+
+	float GetQuadraticCoefficient() { return quadratic; }
+	void SetQuadraticCoefficient(float val) { quadratic = val; }
 	
 protected:
 	Vector4 colour;
@@ -52,5 +58,7 @@ protected:
 	Vector3 position;
 	float radius;
 	float maxAngle;
+	float linear;
+	float quadratic;
 };
 

@@ -23,7 +23,6 @@ public:
 	void SwitchToOrthographic();
 
 	void UpdateTextureMatrix(float rotation);
-	void ToggleFiltering();
 
 	void BuildNodeLists(SceneNode* from);
 	void SortNodeLists();

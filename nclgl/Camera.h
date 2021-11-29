@@ -19,6 +19,8 @@ public:
 	float GetPitch() const { return pitch; }
 	void SetPitch(float p) { pitch = p; }
 
+	void PrintInfo();
+
 private:
 	float yaw;
 	float pitch;
