@@ -7,11 +7,14 @@ SceneNode::SceneNode(Mesh* mesh, Vector4 colour) {
 	parent = NULL;
 	shader = NULL;
 	material = NULL;
+	animation = NULL;
 	//matTextures = vector<GLuint>(0);
 	modelScale = Vector3(1, 1, 1);
 	boundingRadius = 1.0f;
 	distanceFromCamera = 0.0f;
 	texture = 0;
+	currentFrame = 0;
+	frameTime = 0.0f;
 }
 
 SceneNode::~SceneNode(void) {
@@ -19,6 +22,8 @@ SceneNode::~SceneNode(void) {
 		delete children[i];
 	}
 	//delete[] matTextures;
+//	matTextures->clear();
+	//bumpTextures->clear();
 }
 
 void SceneNode::AddChild(SceneNode* s)
@@ -30,6 +35,7 @@ void SceneNode::AddChild(SceneNode* s)
 void SceneNode::RemoveChild(int index)
 {
 	delete children[index];
+	children[index] = NULL;
 }
 
 void SceneNode::Update(float dt)
@@ -39,6 +45,13 @@ void SceneNode::Update(float dt)
 	}
 	else {
 		worldTransform = transform;
+	}
+	if (animation) {
+		frameTime -= dt;
+		while (frameTime < 0.0f) {
+			currentFrame = (currentFrame + 1) % animation->GetFrameCount();
+			frameTime += 1.0f / animation->GetFrameRate();
+		}
 	}
 	for (vector<SceneNode*>::iterator i = children.begin(); i != children.end(); ++i) {
 		(*i)->Update(dt);

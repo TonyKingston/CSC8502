@@ -111,7 +111,7 @@ void main(void) {
  fragColour.rgb += surface * 0.1f;
  fragColour.a = texColour.a;*/
 // fragColour.a = clamp(waterDepth / 5.0, 0.0, 1.0);
-  fragColour = reflectColour;
+//  fragColour = reflectColour;
 
 }
 

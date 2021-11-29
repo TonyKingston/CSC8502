@@ -29,6 +29,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	terrainShader = new Shader("basicterrainvertex.glsl ", "basicterrainfrag.glsl");
 	skyboxShader = new Shader("skyboxVertex.glsl ", "skyboxFragment.glsl");
 	sceneShader = new Shader("MatrixVertex.glsl", "colourFragment.glsl");
+	animationShader = new Shader("SkinningVertex.glsl", "bumpFragment.glsl");
 
 	//sceneShader = new Shader("watervertex.glsl", "waterfragment.glsl");
 	shadowShader = new Shader("shadowvertex.glsl", "shadowfragment.glsl");
@@ -44,6 +45,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	sceneShaders.push_back(sceneShader);
 	sceneShaders.push_back(shadowShader);
 	sceneShaders.push_back(waterShader);
+	sceneShaders.push_back(animationShader);
 	//sceneShaders.push_back(lightShader);
 	//shader = new Shader("waterVertex.glsl", "waterFragment.glsl");
 	for (auto s : sceneShaders) {
@@ -88,38 +90,20 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	materials.insert({ "rock", new MeshMaterial("Rock_05.mat") });
 	meshes.insert({ "skeleton",  Mesh::LoadFromMeshFile("Skeleton.msh") });
 	materials.insert({ "skeleton", new MeshMaterial("Skeleton.mat") });
+	meshes.insert({ "golem",  Mesh::LoadFromMeshFile("Golem.msh") });
+	materials.insert({ "golem", new MeshMaterial("Golem.mat") });
+	vector<MeshAnimation*> skeletonAnims;
+	//skeletonAnims.push_back(new MeshAnimation("Skeleton.anm"));
+	skeletonAnims.push_back(new MeshAnimation("Golem.anm"));
+	//animations.insert({ "skeleton", vector<MeshAnimation*>(skeletonAnims) });
+	animations.insert({ "golem", vector<MeshAnimation*>(skeletonAnims) });
 
 	camera = new Camera();
-	
+	//camera->SetPosition(light->GetPosition());
 	//camera->SetPosition(dimensions * Vector3(0.5, 2, 0.5));
 
 	root = new SceneNode();
-	CreateTrees();
-	/*vector <GLuint>* matTextures = new vector<GLuint>(0);
-	Mesh * rock = meshes.find("rock")->second;
-	MeshMaterial* material = materials.find("rock")->second;
-	for (int i = 0; i < rock->GetSubMeshCount(); ++i) {
-		const MeshMaterialEntry* matEntry =
-			material->GetMaterialForLayer(i);
-
-		const string* filename = nullptr;
-		matEntry->GetEntry("Diffuse", &filename);
-		string path = TEXTUREDIR + *filename;
-		GLuint texID = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
-			SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
-		matTextures->emplace_back(texID);
-
-	}
-	SceneNode* s = new SceneNode();
-	s->SetMesh(rock);
-	s->SetMeshMaterial(material);
-	s->SetTextures(matTextures);
-	s->SetShader(shader);
-	s->SetBoundingRadius(50.0f);
-	s->SetModelScale(Vector3(5, 5, 5));
-
-	root->AddChild(s);*/
-
+	//CreateRocks();
 
 	/*auto it = root->GetChildIteratorStart();
 	Vector3 pos = (*it)->GetWorldTransform().GetPositionVector();
@@ -157,12 +141,11 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	clippingPlane = Plane(Vector3(0, 1, 0), -waterHeight);
 	glEnable(GL_CLIP_DISTANCE0); // Clipping plane for water
 
-	/*glGenTextures(1, &shadowTex);
+	glGenTextures(1, &shadowTex);
 	glBindTexture(GL_TEXTURE_2D, shadowTex);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
 		SHADOWSIZE, SHADOWSIZE, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glBindTexture(GL_TEXTURE_2D, 0);
@@ -171,7 +154,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
 		GL_TEXTURE_2D, shadowTex, 0);
 	glDrawBuffer(GL_NONE);
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);*/
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
@@ -200,15 +183,21 @@ Renderer::~Renderer(void) {
 	auto it = root->GetChildIteratorStart();
 	it++;
 	delete [] (*it)->GetMaterialTextures();
+	it = root->GetChildIteratorStart();
+	it++;
+	delete[](*it)->GetBumpTextures();
 	for (auto& shader : sceneShaders)
 		delete shader;
-	for (auto& mesh : sceneMeshes)
-		delete mesh;
 	for (auto it = meshes.begin(); it != meshes.end(); it++) {
 		delete it->second;
 	}
 	for (auto it = materials.begin(); it != materials.end(); it++) {
 		delete it->second;
+	}
+	for (auto it = animations.begin(); it != animations.end(); it++) {
+		for (auto anim : it->second) {
+			delete anim;
+		}
 	}
 	glDeleteTextures(1, &shadowTex);
 	glDeleteFramebuffers(1, &shadowFBO);
@@ -279,6 +268,7 @@ void Renderer::RenderScene() {
 
 	// Draw regular scene
 	glDisable(GL_CLIP_DISTANCE0);
+	//DrawShadowScene();
 	DrawScene(true);
 	//BindShader(terrainShader);
 	
@@ -451,9 +441,7 @@ void Renderer::DrawShadowScene() {
 		light->GetPosition(), Vector3(0, 0, 0));
 	projMatrix = Matrix4::Perspective(1, 100, 1, 45);
 	shadowMatrix = projMatrix * viewMatrix; // used later
-	for (int i = 0; i < 4; ++i) {
-		sceneMeshes[i]->Draw();
-	}
+	DrawNodes();
 	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 	glViewport(0, 0, width, height);
 
@@ -520,13 +508,6 @@ void Renderer::DrawNode(SceneNode* n) {
 		glUniformMatrix4fv(
 			glGetUniformLocation(currentShader->GetProgram(),
 				"modelMatrix"), 1, false, model.values);
-		
-	/*	glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, n->GetTexture());*/
-
-		
-		/*glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, n->GetBumpTexture());*/
 
 		Vector3 norm = clippingPlane.GetNormal();
 		glUniform4f(glGetUniformLocation(currentShader->GetProgram(), "plane"), norm.x, norm.y, norm.z, clippingPlane.GetDistance());
@@ -534,6 +515,20 @@ void Renderer::DrawNode(SceneNode* n) {
 		glUniform3fv(glGetUniformLocation(currentShader->GetProgram(),
 			"cameraPos"), 1, (float*)&camera->GetPosition());
 
+		if (n->GetAnimation()) {
+			Mesh* mesh = n->GetMesh();
+			vector <Matrix4> frameMatrices;
+			const Matrix4* invBindPose = mesh->GetInverseBindPose();
+			const Matrix4* frameData = n->GetAnimation()->GetJointData(n->GetCurrentFrame());
+
+			for (unsigned int i = 0; i < mesh->GetJointCount(); ++i) {
+				frameMatrices.emplace_back(frameData[i] * invBindPose[i]);
+			}
+			
+			glUniformMatrix4fv(glGetUniformLocation(currentShader->GetProgram(), "joints"), frameMatrices.size(), false,
+				(float*)frameMatrices.data());
+		}
+		
 		SetShaderLight(light);
 
 		/*glUniform4fv(glGetUniformLocation(sceneShader->GetProgram(),
@@ -549,34 +544,14 @@ void Renderer::DrawNode(SceneNode* n) {
 	}
 }
 
-void Renderer::CreateTrees() {
+void Renderer::CreateRocks() {
 	auto it = materials.find("rock");
 	if (it != materials.end()) {
 		MeshMaterial* material = it->second;
 		Mesh* mesh = meshes.find("rock")->second;
-		vector<GLuint>* matTextures = new vector<GLuint>();
-		vector<GLuint>* bumpTextures = new vector<GLuint>();
-		vector<string> texPaths;
-		vector<string> bumpPaths;
-		for (int i = 0; i < mesh->GetSubMeshCount(); ++i) {
-			const MeshMaterialEntry* matEntry =
-				material->GetMaterialForLayer(i);
+		vector<GLuint>* matTextures = GetTexturesForMesh("rock");
+		vector<GLuint>* bumpTextures = GetBumpsForMesh("rock");
 
-			const string* filename = nullptr;
-			matEntry->GetEntry("Diffuse", &filename);
-
-			string path = TEXTUREDIR + *filename;
-			GLuint texID = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
-					SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
-			
-			matTextures->emplace_back(texID);
-
-			matEntry->GetEntry("Bump", &filename);
-			path = TEXTUREDIR + *filename;
-			GLuint bumpID = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
-				SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
-			bumpTextures->emplace_back(bumpID);
-		}
 		/*const MeshMaterialEntry* matEntry = material->GetMaterialForLayer(0);
 		const string* filename = nullptr;
 		matEntry->GetEntry("Diffuse", &filename);
@@ -590,7 +565,7 @@ void Renderer::CreateTrees() {
 		/*matEntry->GetEntry("Bump", &filename);
 		// Mesh Extractor doesn't pick up bump map
 		if (!texID || !bumpID) return;*/
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < 1; i++) {
 			//SceneNode* s = new SceneNode(treeMesh, Vector4(1, 1, 1, 0.9));
 			SceneNode* s = new SceneNode();
 			s->SetMesh(mesh);
@@ -599,11 +574,12 @@ void Renderer::CreateTrees() {
 			s->SetBoundingRadius(50.0f);
 			s->SetTextures(matTextures);
 			s->SetBumpTextures(bumpTextures);
-		//	s->SetTexture(texID);
-			//s->SetBumpTexture(bumpID);
+
 			Vector3 pos = light->GetPosition();
+			/*s->SetTransform(Matrix4::Translation(
+				Vector3(100 * i, 25, 100 * i + (i*20))));*/
 			s->SetTransform(Matrix4::Translation(
-				Vector3(100 * i, 25, 100 * i + (i*20))));
+				Vector3(light->GetPosition().x - 50, 350, light->GetPosition().z + 100)));
 			s->SetModelScale(Vector3(10, 10, 10));
 			
 			root->AddChild(s);
@@ -614,4 +590,75 @@ void Renderer::CreateTrees() {
 		return;
 	}
 	
+}
+
+void Renderer::CreateGolem()
+{
+	Mesh* mesh = meshes.find("golem")->second;
+	MeshMaterial* material = materials.find("golem")->second;
+
+	vector <GLuint>* matTextures = GetTexturesForMesh("golem");
+	vector <GLuint>* bumpTextures = GetBumpsForMesh("golem");
+
+	SceneNode* s = new SceneNode();
+	s->SetMesh(mesh);
+	s->SetTextures(matTextures);
+	s->SetBumpTextures(bumpTextures);
+	Vector2 pos = Vector2(1800, 1500);
+	s->SetTransform(Matrix4::Translation(
+		Vector3(pos.x, heightMap->GetHeightForPosition(pos), pos.y)) * Matrix4::Rotation(45, Vector3(0, 1, 0)));
+	s->SetAnimation(animations.find("golem")->second[0]);
+	s->SetShader(animationShader);
+	s->SetBoundingRadius(50.0f);
+	s->SetModelScale(Vector3(10, 10, 10));
+	root->AddChild(s);
+
+}
+
+vector<GLuint>* Renderer::GetTexturesForMesh(string obj)
+{
+	auto meshIt = meshes.find(obj);
+	auto matIt = materials.find(obj);
+	if (meshIt == meshes.end() || matIt == materials.end()) {
+		return;
+	}
+	Mesh* mesh = meshIt->second;
+	MeshMaterial* material = matIt->second;
+	vector<GLuint>* matTextures = new vector<GLuint>(0);
+	for (int i = 0; i < mesh->GetSubMeshCount(); ++i) {
+		const MeshMaterialEntry* matEntry =
+			material->GetMaterialForLayer(i);
+
+		const string* filename = nullptr;
+		matEntry->GetEntry("Diffuse", &filename);
+		string path = TEXTUREDIR + *filename;
+		GLuint texID = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
+			SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
+		matTextures->emplace_back(texID);
+	}
+	return matTextures;
+}
+
+vector<GLuint>* Renderer::GetBumpsForMesh(string obj)
+{
+	auto meshIt = meshes.find(obj);
+	auto matIt = materials.find(obj);
+	if (meshIt == meshes.end() || matIt == materials.end()) {
+		return;
+	}
+	Mesh* mesh = meshIt->second;
+	MeshMaterial* material = matIt->second;
+	vector<GLuint>* bumpTextures = new vector<GLuint>(0);
+	for (int i = 0; i < mesh->GetSubMeshCount(); ++i) {
+		const MeshMaterialEntry* matEntry =
+			material->GetMaterialForLayer(i);
+
+		const string* filename = nullptr;
+		matEntry->GetEntry("Bump", &filename);
+		string path = TEXTUREDIR + *filename;
+		GLuint texID = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
+			SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
+		bumpTextures->emplace_back(texID);
+	}
+	return bumpTextures;
 }

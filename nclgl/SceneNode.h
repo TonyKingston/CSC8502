@@ -5,6 +5,7 @@
 #include "../nclgl/Mesh.h"
 #include "../nclgl/Shader.h"
 #include "../nclgl/MeshMaterial.h"
+#include "../nclgl/MeshAnimation.h"
 #include <vector>
 
 class SceneNode
@@ -51,6 +52,11 @@ public:
 
 	void SetBumpTextures(vector<GLuint>* texs) { bumpTextures = texs; }
 	vector<GLuint>* GetBumpTextures() { return bumpTextures; }
+
+	void SetAnimation(MeshAnimation* anim) { animation = anim; }
+	MeshAnimation* GetAnimation() { return animation; }
+
+	int GetCurrentFrame() { return currentFrame; }
 	
 	static bool CompareByCameraDistance(SceneNode * a, SceneNode * b) {
 		return (a->distanceFromCamera < b->distanceFromCamera) ? true : false;
@@ -85,7 +91,9 @@ protected:
 	vector<GLuint>* matTextures;
 	vector<GLuint>* bumpTextures;
 	MeshMaterial* material;
-
+	MeshAnimation* animation;
+	int currentFrame;
+	float frameTime;
 	bool useShadows = false;
 
 };

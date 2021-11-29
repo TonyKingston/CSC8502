@@ -7,6 +7,7 @@
 #include "../nclgl/HeightMap.h"
 #include "../nclgl/MeshMaterial.h"
 #include "../nclgl/Light.h"
+#include "../nclgl/MeshAnimation.h"
 #include <string>
 #include "WaterFBO.h"
 
@@ -34,7 +35,12 @@ public:
 	void DrawWater();
 	void DrawHeightMap();
 	void DrawShadowScene();
+	void CreateRocks();
 	void CreateTrees();
+	void CreateGolem();
+	bool CreateObjects(string name, int n);
+	vector<GLuint>* GetTexturesForMesh(string obj);
+	vector<GLuint>* GetBumpsForMesh(string obj);
 	void DrawScene(bool drawWater);
 
 	int CreateFrameBuffer();
@@ -42,6 +48,7 @@ public:
 protected:
 	std::map<string, Mesh*> meshes;
 	std::map<string, MeshMaterial*> materials;
+	std::map<string, vector<MeshAnimation*>> animations;
 	SceneNode* root;
 	Mesh* triangle;
 	Mesh* quad;
@@ -51,6 +58,7 @@ protected:
 	Shader* sceneShader;
 	Shader* shadowShader;
 	Shader* waterShader;
+	Shader* animationShader;
 	Camera* camera;
 	GLuint terrainTexs[3];
 	GLuint terrainBumps[3];
@@ -60,7 +68,7 @@ protected:
 	GLuint font;
 	vector<Shader*> sceneShaders;
 	vector<GLuint> sceneTextures;
-	vector<Mesh*> sceneMeshes;
+	vector<MeshAnimation*> sceneAnimations;
 	Plane clippingPlane;
 	bool filtering;
 	bool repeating;

@@ -3,17 +3,27 @@
 uniform mat4 modelMatrix;
 uniform mat4 viewMatrix;
 uniform mat4 projMatrix;
+uniform vec4 plane;
 
 in vec3 position;
+in vec4 colour;
+in vec3 normal;
+in vec4 tangent;
 in vec2 texCoord;
+
 in vec4 jointWeights;
 in ivec4 jointIndices;
 
 uniform mat4 joints [128];
 
 out Vertex {
-  vec2 texCoord;
-  vec4 jointWeights;
+ vec4 colour;
+ vec2 texCoord;
+ vec3 normal;
+ vec3 tangent; 
+ vec3 binormal;
+ vec3 worldPos;
+  
 } OUT;
 
 void main ( void ) {
@@ -26,8 +36,17 @@ void main ( void ) {
 
     skelPos += joints[jointIndex] * localPos * jointWeight;
   }
-  mat4 mvp = projMatrix * viewMatrix * modelMatrix;
-  gl_Position = mvp * vec4 (skelPos.xyz, 1.0);
+  vec4 worldPos = modelMatrix * vec4(skelPos.xyz, 1.0);
+  gl_Position = (projMatrix * viewMatrix) * worldPos;
+ mat3 normalMatrix = transpose ( inverse ( mat3 ( modelMatrix )));
+
+ vec3 wNormal = normalize ( normalMatrix * normalize ( normal ));
+ vec3 wTangent = normalize ( normalMatrix * normalize ( tangent.xyz ));
+
+ OUT.normal = wNormal;
+ OUT.tangent = wTangent;
+ OUT.binormal = cross ( wTangent , wNormal ) * tangent.w;
+  OUT.colour = colour;
   OUT.texCoord = texCoord;
-  OUT.jointWeights = jointWeights;
+  OUT.worldPos = worldPos.xyz;
 }

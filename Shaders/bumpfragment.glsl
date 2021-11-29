@@ -9,7 +9,7 @@ uniform float lightRadius;
 uniform vec3 lightDirection;
 uniform float lightAngle;
 
- in Vertex {
+in Vertex {
  vec3 colour;
  vec2 texCoord;
  vec3 normal;

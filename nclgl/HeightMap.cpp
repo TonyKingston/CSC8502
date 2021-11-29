@@ -11,6 +11,7 @@ HeightMap::HeightMap(const std::string& name)
 		return;
 	}
 
+	width = iWidth;
 	numVertices = iWidth * iHeight;
 	numIndices = (iWidth - 1) * (iHeight - 1) * 6;
 	vertices = new Vector3[numVertices];
@@ -26,6 +27,7 @@ HeightMap::HeightMap(const std::string& name)
 			int offset = (z * iWidth) + x;
 			vertices[offset] = Vector3(x, data[offset], z) * vertexScale;
 			textureCoords[offset] = Vector2(x, z) * textureScale;
+			heights.push_back(data[offset] * vertexScale.y);
 			
 		}
 	}
@@ -57,4 +59,9 @@ HeightMap::HeightMap(const std::string& name)
 	heightmapSize.x = vertexScale.x * (iWidth - 1);
 	heightmapSize.y = vertexScale.y * 255.0f;// each height is a byte !
 	heightmapSize.z = vertexScale.z * (iHeight - 1);
+}
+
+float HeightMap::GetHeightForPosition(Vector2 pos) const
+{
+	return heights[((int)(pos.y / 16.0f) * width) + (int)(pos.x / 16.0f)];
 }
