@@ -83,7 +83,7 @@ Matrix4 Camera::BuildViewMatrix()
 
 void Camera::PrintInfo()
 {
-	std::cout << "Camera at (x,y,z): " + std::to_string(position.x) + std::to_string(position.y) + std::to_string(position.z) << std::endl;
+	std::cout << "Camera at (x,y,z): " + std::to_string(position.x) + ", " + std::to_string(position.y) + ", " + std::to_string(position.z) << std::endl;
 	std::cout << "Camera pitch: " + std::to_string(pitch) << std::endl;
 	std::cout << "Camera yaw: " + std::to_string(yaw) << std::endl;
 }

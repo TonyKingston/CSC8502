@@ -11,6 +11,12 @@
 #include <string>
 #include "WaterFBO.h"
 
+struct Waypoint {
+	Vector3 position;
+	float pitch;
+	float yaw;
+};
+
 class Renderer : public OGLRenderer {
 public:
 	Renderer(Window& parent);
@@ -42,7 +48,13 @@ public:
 	vector<GLuint>* GetBumpsForMesh(string obj);
 	void DrawScene(bool drawWater);
 
+	static float Lerp(float a, float b, float t) {
+		return (a * t) + (b * (1.0f - t));
+	}
+
 	int CreateFrameBuffer();
+
+	void SetWaypoints();
 
 protected:
 	std::map<string, Mesh*> meshes;
@@ -81,8 +93,14 @@ protected:
 	WaterFBO* waterBuffer;
 	HeightMap* heightMap;
 	Light* light;
+	vector<Light*> lights;
 	GLuint shadowFBO;
 	GLuint shadowTex;
+
+	bool inAutomode;
+	vector<Waypoint> waypoints;
+	int waypointsCleared = 0;
+	float waypointWaitTime = 10.0f;
 
 	vector<SceneNode*> transparentNodeList;
 	vector<SceneNode*> nodeList;

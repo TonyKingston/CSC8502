@@ -57,6 +57,10 @@ public:
 		return sqrt((x*x)+(y*y)+(z*z));	
 	}
 
+	static Vector3 Lerp(Vector3 &a, Vector3 &b, float t) {
+		return (a * t) + (b * (1.0f - t));
+	}
+
 	void			Invert() {
 		x = -x;
 		y = -y;	

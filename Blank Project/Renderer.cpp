@@ -1,5 +1,6 @@
 #include "Renderer.h"
 #include <algorithm>
+#include <cmath>
 
 const int MAX_TEXTURES = 3;
 const int waterHeight = 25;
@@ -9,13 +10,15 @@ const float farPlane = 15000.0f;
 
 Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
     //triangle = Mesh::GenerateTriangle();
-	heightMap = new HeightMap(TEXTUREDIR"oblivionResize.png");
+	heightMap = new HeightMap(TEXTUREDIR"islandSmall.png");
 	quad = Mesh::GenerateQuad();
 	Vector3 dimensions = heightMap->GetHeightmapSize();
 	light = new Light(dimensions * Vector3(0.5f, 2.0f, 0.5f),
 		Vector4(1, 1, 1, 1), dimensions.x * 1.5);
-	light->SetLinearCoefficient(0.0014);
-	light->SetQuadraticCoefficient(0.000007);
+	//light->SetLinearCoefficient(0.000007);
+	light->SetLinearCoefficient(1.0 / (light->GetRadius() * light->GetRadius() * 0.1));
+	light->SetQuadraticCoefficient(0.0000002);
+	lights.push_back(light);
 	/*light = new Light(Vector3(200,dimensions.y,200),
 		Vector4(1, 1, 1, 1), dimensions.x * 1.5);*/
 
@@ -98,11 +101,16 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	animations.insert({ "golem", vector<MeshAnimation*>(skeletonAnims) });
 
 	camera = new Camera();
-	//camera->SetPosition(light->GetPosition());
-	//camera->SetPosition(dimensions * Vector3(0.5, 2, 0.5));
+	camera->SetPosition(Vector3(21, 232, 48));
+	camera->SetPitch(-6.8);
+	camera->SetYaw(271.2);
+
+	SetWaypoints();
 
 	root = new SceneNode();
-	//CreateRocks();
+	CreateRocks();
+	CreateGolem();
+	CreateTrees();
 
 	/*auto it = root->GetChildIteratorStart();
 	Vector3 pos = (*it)->GetWorldTransform().GetPositionVector();
@@ -168,6 +176,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 
 	waterMove = 0.0f;
 	waveSpeed = 0.03f;
+	inAutomode = true;
 	init = true;
 }
 
@@ -175,7 +184,6 @@ Renderer::~Renderer(void) {
 	delete triangle;
 	delete quad;
 	delete camera;
-	delete light;
 	glDeleteTextures(1, &skybox);
 	glDeleteTextures(3, terrainTexs);
 	glDeleteTextures(3, terrainBumps);
@@ -189,6 +197,8 @@ Renderer::~Renderer(void) {
 	delete[](*it)->GetBumpTextures();
 	for (auto& shader : sceneShaders)
 		delete shader;
+	for (auto l : lights)
+		delete l;
 	for (auto it = meshes.begin(); it != meshes.end(); it++) {
 		delete it->second;
 	}
@@ -226,6 +236,7 @@ void Renderer::UpdateTextureMatrix(float value)
 
 
 void Renderer::RenderScene() {
+
 	BuildNodeLists(root);
 	SortNodeLists();
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -271,6 +282,9 @@ void Renderer::RenderScene() {
 	}*/
 	
 	ClearNodeLists();
+	if (Window::GetKeyboard()->KeyTriggered(KEYBOARD_L)) {
+		inAutomode = !inAutomode;
+	}
 }
 
 void Renderer::DrawScene(bool drawWater) {
@@ -282,8 +296,45 @@ void Renderer::DrawScene(bool drawWater) {
 	DrawNodes();
 }
 
+void Renderer::SetWaypoints()
+{
+	Waypoint point;
+	point.position = Vector3(272, 232, 255); // Fresnel
+	point.pitch = -84;
+	point.yaw = 236.5;
+	waypoints.push_back(point);
+	point.position = Vector3(2054, 256, 1468); // Golem
+	point.pitch = -22.5;
+	point.yaw = 271.2;
+	waypoints.push_back(point);
+
+}
+
 void Renderer::UpdateScene(float dt) {
-	camera->UpdateCamera(dt);
+	if (inAutomode) {
+		if (waypointWaitTime <= 0) { // Go to the next waypoint after a certain length of time
+			Vector3 newPos = Vector3::Lerp(waypoints[waypointsCleared].position, camera->GetPosition(), dt);
+			float newYaw = Lerp(waypoints[waypointsCleared].yaw, camera->GetYaw(), dt);
+			float newPitch = Lerp(waypoints[waypointsCleared].pitch, camera->GetPitch(), dt);
+			camera->SetPosition(newPos);
+			camera->SetYaw(newYaw);
+			camera->SetPitch(newPitch);
+
+			if ((camera->GetPosition() - waypoints[waypointsCleared].position).Length() < 10.0f) {
+				waypointWaitTime = 10.0f;
+				waypointsCleared++;
+				waypointsCleared = waypointsCleared == waypoints.size() ? 0 : waypointsCleared;
+				std::cout << "Waypoint Reacher" << std::endl;
+
+			}
+		}
+		else {
+			waypointWaitTime -= dt;
+		}
+	}
+	else {
+		camera->UpdateCamera(dt);
+	}
 	viewMatrix = camera->BuildViewMatrix();
 	frameFrustum.FromMatrix(projMatrix * viewMatrix);
 	root->Update(dt);
@@ -540,20 +591,7 @@ void Renderer::CreateRocks() {
 		vector<GLuint>* matTextures = GetTexturesForMesh("rock");
 		vector<GLuint>* bumpTextures = GetBumpsForMesh("rock");
 
-		/*const MeshMaterialEntry* matEntry = material->GetMaterialForLayer(0);
-		const string* filename = nullptr;
-		matEntry->GetEntry("Diffuse", &filename);
-		string path = TEXTUREDIR + *filename;
-		GLuint texID = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
-			SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
-		matEntry->GetEntry("Bump", &filename);
-		path = TEXTUREDIR + *filename;
-		GLuint bumpID = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
-			SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
-		/*matEntry->GetEntry("Bump", &filename);
-		// Mesh Extractor doesn't pick up bump map
-		if (!texID || !bumpID) return;*/
-		for (int i = 0; i < 1; i++) {
+		for (int i = 0; i < 10; i++) {
 			//SceneNode* s = new SceneNode(treeMesh, Vector4(1, 1, 1, 0.9));
 			SceneNode* s = new SceneNode();
 			s->SetMesh(mesh);
@@ -563,11 +601,9 @@ void Renderer::CreateRocks() {
 			s->SetTextures(matTextures);
 			s->SetBumpTextures(bumpTextures);
 
-			Vector3 pos = light->GetPosition();
-			/*s->SetTransform(Matrix4::Translation(
-				Vector3(100 * i, 25, 100 * i + (i*20))));*/
+			Vector2 pos = Vector2(light->GetPosition().x + (50 * i), (50 * i));
 			s->SetTransform(Matrix4::Translation(
-				Vector3(light->GetPosition().x - 50, 350, light->GetPosition().z + 100)));
+				Vector3(pos.x + 50, heightMap->GetHeightForPosition(pos), pos.y)));
 			s->SetModelScale(Vector3(10, 10, 10));
 			
 			root->AddChild(s);
@@ -578,6 +614,41 @@ void Renderer::CreateRocks() {
 		return;
 	}
 	
+}
+
+void Renderer::CreateTrees()
+{
+	auto it = materials.find("tree");
+	if (it != materials.end()) {
+		vector<GLuint>* matTextures = GetTexturesForMesh("tree");
+		vector<GLuint>* bumpTextures = new vector<GLuint>(); // The mesh extractor doesn't pick up the bump map for the tree so I have to do it manually.
+		MeshMaterial* material = it->second;
+		Mesh* mesh = meshes.find("tree")->second;
+		string path = TEXTUREDIR"Coconut Palm Tree Pack/Textures/Coconut_Palm_Tree_normalspec_bark.psd";
+		GLuint texID = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
+			SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
+		bumpTextures->emplace_back(0);
+		bumpTextures->emplace_back(texID);
+
+		for (int i = 0; i < 10; i++) {
+			SceneNode* s = new SceneNode();
+			s->SetMesh(mesh);
+			s->SetMeshMaterial(material);
+			s->SetShader(shader);
+			s->SetBoundingRadius(45.0f);
+			s->SetTextures(matTextures);
+			s->SetBumpTextures(bumpTextures);
+			s->SetColour(Vector4(1, 1, 1, 0.9));
+			/*s->SetTransform(Matrix4::Translation(
+				Vector3(100 * i, 25, 100 * i + (i*20))));*/
+			Vector2 pos = Vector2((50 * i), light->GetPosition().z + (50 * i));
+			s->SetTransform(Matrix4::Translation(
+				Vector3(pos.x - 50, heightMap->GetHeightForPosition(pos),pos.y)));
+			s->SetModelScale(Vector3(10, 10, 10));
+
+			root->AddChild(s);
+		}
+	}
 }
 
 void Renderer::CreateGolem()
@@ -592,9 +663,10 @@ void Renderer::CreateGolem()
 	s->SetMesh(mesh);
 	s->SetTextures(matTextures);
 	s->SetBumpTextures(bumpTextures);
-	Vector2 pos = Vector2(1800, 1500);
+	Vector2 pos = Vector2(2200, 1414);
+	//Vector2 pos = Vector2(light->GetPosition().x, light->GetPosition().z);
 	s->SetTransform(Matrix4::Translation(
-		Vector3(pos.x, heightMap->GetHeightForPosition(pos), pos.y)) * Matrix4::Rotation(45, Vector3(0, 1, 0)));
+		Vector3(pos.x, heightMap->GetHeightForPosition(pos), pos.y)) * Matrix4::Rotation(20, Vector3(0, 1, 0)));
 	s->SetAnimation(animations.find("golem")->second[0]);
 	s->SetShader(animationShader);
 	s->SetBoundingRadius(50.0f);
