@@ -66,6 +66,23 @@ void Mesh::DrawSubMesh(int i) {
 	glBindVertexArray(0);
 }
 
+void Mesh::DrawSubMeshInstanced(int i, int n)
+{
+	if (i < 0 || i >= (int)meshLayers.size()) {
+		return;
+	}
+	SubMesh m = meshLayers[i];
+	glBindVertexArray(arrayObject);
+	if (bufferObject[INDEX_BUFFER]) {
+		const GLvoid* offset = (const GLvoid*)(m.start * sizeof(unsigned int));
+		glDrawElementsInstanced(type, m.count, GL_UNSIGNED_INT, offset, n);
+	}
+	else {
+		glDrawArraysInstanced(type, m.start, m.count, n);
+	}
+	glBindVertexArray(0);
+}
+
 Mesh* Mesh::GenerateTriangle() {
 	Mesh* m = new Mesh();
 	m->numVertices = 3;

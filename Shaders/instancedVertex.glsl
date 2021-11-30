@@ -1,5 +1,9 @@
 #version 330 core
-uniform mat4 modelMatrix;
+layout(std140) uniform Transforms
+{
+  mat4 modelMatrix[10];
+};
+
 uniform mat4 viewMatrix;
 uniform mat4 projMatrix;
 uniform vec4 plane;
@@ -21,14 +25,18 @@ out Vertex {
 } OUT;
 
 void main ( void ) {
-
- vec4 worldPos = ( modelMatrix * vec4 ( position,1));
+ mat4 trans;
+ if (gl_InstanceID != 0) {
+   trans = modelMatrix[gl_InstanceID];
+ }
+ 
+ vec4 worldPos = ( trans * vec4 ( position,1));
  gl_ClipDistance[0] = dot(worldPos,plane);
 
  OUT.colour = colour;
  OUT.texCoord = texCoord;
 
- mat3 normalMatrix = transpose ( inverse ( mat3 ( modelMatrix )));
+ mat3 normalMatrix = transpose ( inverse ( mat3 ( trans )));
 
  vec3 wNormal = normalize ( normalMatrix * normalize ( normal ));
  vec3 wTangent = normalize ( normalMatrix * normalize ( tangent.xyz ));

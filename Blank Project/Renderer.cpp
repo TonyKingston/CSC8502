@@ -13,14 +13,23 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	heightMap = new HeightMap(TEXTUREDIR"islandSmall.png");
 	quad = Mesh::GenerateQuad();
 	Vector3 dimensions = heightMap->GetHeightmapSize();
+
+	// Set up lights
 	light = new Light(dimensions * Vector3(0.5f, 2.0f, 0.5f),
 		Vector4(1, 1, 1, 1), dimensions.x * 1.5);
 	//light->SetLinearCoefficient(0.000007);
-	light->SetLinearCoefficient(1.0 / (light->GetRadius() * light->GetRadius() * 0.1));
-	light->SetQuadraticCoefficient(0.0000002);
-	lights.push_back(light);
-	/*light = new Light(Vector3(200,dimensions.y,200),
-		Vector4(1, 1, 1, 1), dimensions.x * 1.5);*/
+	Light* dirLight = new Light(dimensions * Vector3(0.5f, 2.0f, 0.5f),
+		Vector4(1, 1, 1, 1));
+	Light* pointLight = new Light(Vector3(1018, 242, 900), Vector4(1, 0, 0, 1), 100);
+	dirLight->SetAmbient(0.25f);
+	Light* spotLight = new Light(Vector3(1400, 279, 2196), Vector4(0, 0, 1, 1), Vector3(1,0,1), 100.0f, 30.0f);
+	//light->SetLinearCoefficient(1.0 / (light->GetRadius() * light->GetRadius() * 0.1)); // Could do this on the GPU instead
+	//light->SetQuadraticCoefficient(0.0000002);
+	pointLight->SetLinearCoefficient(1.0 / (pointLight->GetRadius() * pointLight->GetRadius() * 0.1));
+	pointLight->SetQuadraticCoefficient(0.000007);
+	lights.push_back(dirLight);
+	lights.push_back(pointLight);
+	lights.push_back(spotLight);
 
 	// Shaders
 //	shader = new Shader("MatrixVertex.glsl", "colourFragment.glsl");
@@ -36,6 +45,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	//sceneShader = new Shader("watervertex.glsl", "waterfragment.glsl");
 	shadowShader = new Shader("shadowvertex.glsl", "shadowfragment.glsl");
 	waterShader = new Shader("watervertex.glsl", "waterfragment.glsl");
+	instancedShader = new Shader("instancedVertex.glsl", "bumpFragment.glsl");
 	//waterShader = new Shader("TexturedVertex.glsl ", "TexturedFragment.glsl");
 
 
@@ -48,6 +58,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	sceneShaders.push_back(shadowShader);
 	sceneShaders.push_back(waterShader);
 	sceneShaders.push_back(animationShader);
+	sceneShaders.push_back(instancedShader);
 	//sceneShaders.push_back(lightShader);
 	//shader = new Shader("waterVertex.glsl", "waterFragment.glsl");
 	for (auto s : sceneShaders) {
@@ -165,6 +176,12 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	glDrawBuffer(GL_NONE);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
+	// Uniform buffer for transforms
+	glGenBuffers(1, &uniformBuffer);
+	glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
+	glBufferData(GL_UNIFORM_BUFFER, 1000, NULL, GL_STATIC_DRAW);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 	glEnable(GL_BLEND);
@@ -184,6 +201,7 @@ Renderer::~Renderer(void) {
 	delete triangle;
 	delete quad;
 	delete camera;
+	delete light;
 	glDeleteTextures(1, &skybox);
 	glDeleteTextures(3, terrainTexs);
 	glDeleteTextures(3, terrainBumps);
@@ -263,7 +281,7 @@ void Renderer::RenderScene() {
 	glViewport(0, 0, 1280, 720);
 	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
 	clippingPlane.SetNormal(Vector3(0, -1, 0));
-	clippingPlane.SetDistance(waterHeight);
+	clippingPlane.SetDistance(waterHeight + 1.0f);
 	DrawScene(false);
 	waterBuffer->UnbindCurrentBuffer();
 
@@ -299,6 +317,10 @@ void Renderer::DrawScene(bool drawWater) {
 void Renderer::SetWaypoints()
 {
 	Waypoint point;
+	point.position = Vector3(21, 232, 48); // Initial
+	point.pitch = -6.8;
+	point.yaw = 271.2;
+	waypoints.push_back(point);
 	point.position = Vector3(272, 232, 255); // Fresnel
 	point.pitch = -84;
 	point.yaw = 236.5;
@@ -307,21 +329,24 @@ void Renderer::SetWaypoints()
 	point.pitch = -22.5;
 	point.yaw = 271.2;
 	waypoints.push_back(point);
-
+	point.position = Vector3(2013, 219, 1784);  // Rocks
+	point.pitch = -25;
+	point.yaw = 129;
+	waypoints.push_back(point);
 }
 
 void Renderer::UpdateScene(float dt) {
 	if (inAutomode) {
 		if (waypointWaitTime <= 0) { // Go to the next waypoint after a certain length of time
-			Vector3 newPos = Vector3::Lerp(waypoints[waypointsCleared].position, camera->GetPosition(), dt);
+			Vector3 newPos = Vector3::Lerp(waypoints[waypointsCleared].position, camera->GetPosition(), dt / 5);
 			float newYaw = Lerp(waypoints[waypointsCleared].yaw, camera->GetYaw(), dt);
 			float newPitch = Lerp(waypoints[waypointsCleared].pitch, camera->GetPitch(), dt);
 			camera->SetPosition(newPos);
 			camera->SetYaw(newYaw);
 			camera->SetPitch(newPitch);
 
-			if ((camera->GetPosition() - waypoints[waypointsCleared].position).Length() < 10.0f) {
-				waypointWaitTime = 10.0f;
+			if ((camera->GetPosition() - waypoints[waypointsCleared].position).Length() < 20.0f) {
+				waypointWaitTime = 5.0f;
 				waypointsCleared++;
 				waypointsCleared = waypointsCleared == waypoints.size() ? 0 : waypointsCleared;
 				std::cout << "Waypoint Reacher" << std::endl;
@@ -452,7 +477,8 @@ void Renderer::DrawHeightMap() {
 
 	
 
-	SetShaderLight(light);
+	SetShaderLights(lights);
+	//SetShaderLight(light);
 
 	Matrix4 model = modelMatrix * Matrix4::Scale(Vector3(1,1,1));
 	glUniformMatrix4fv(
@@ -542,11 +568,28 @@ void Renderer::DrawNode(SceneNode* n) {
 			"bumpTex"), 1);
 
 		//UpdateShaderMatrices();
-		Matrix4 model = n->GetWorldTransform() *
-			Matrix4::Scale(n->GetModelScale());
-		glUniformMatrix4fv(
-			glGetUniformLocation(currentShader->GetProgram(),
-				"modelMatrix"), 1, false, model.values);
+		if (!n->IsInstanced()) {
+			Matrix4 model = n->GetWorldTransform() *
+				Matrix4::Scale(n->GetModelScale());
+			glUniformMatrix4fv(
+				glGetUniformLocation(currentShader->GetProgram(),
+					"modelMatrix"), 1, false, model.values);
+		}
+		else {
+			glUniformBlockBinding(currentShader->GetProgram(), glGetUniformBlockIndex(instancedShader->GetProgram(), "Transforms"), 0);
+			glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
+			glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
+
+			vector<Matrix4> transforms;
+			for (int i = 0; i < 10; i++) {
+				Vector2 pos = Vector2(light->GetPosition().x + (50 * 1), light->GetPosition().z + (50 * i));
+				Matrix4 transform = Matrix4::Translation(Vector3(pos.x, heightMap->GetHeightForPosition(pos), pos.y)) *
+					Matrix4::Scale(n->GetModelScale());
+				transforms.push_back(transform);
+			}
+			glBufferData(GL_UNIFORM_BUFFER, 10 * sizeof(Matrix4), transforms.data(), GL_STATIC_DRAW);
+			glBindBuffer(GL_UNIFORM_BUFFER, 0);
+		}
 
 		Vector3 norm = clippingPlane.GetNormal();
 		glUniform4f(glGetUniformLocation(currentShader->GetProgram(), "plane"), norm.x, norm.y, norm.z, clippingPlane.GetDistance());
@@ -568,7 +611,8 @@ void Renderer::DrawNode(SceneNode* n) {
 				(float*)frameMatrices.data());
 		}
 		
-		SetShaderLight(light);
+		//SetShaderLight(light);
+		SetShaderLights(lights);
 
 		/*glUniform4fv(glGetUniformLocation(sceneShader->GetProgram(),
 			"nodeColour"), 1, (float*)&n->GetColour());
@@ -601,9 +645,9 @@ void Renderer::CreateRocks() {
 			s->SetTextures(matTextures);
 			s->SetBumpTextures(bumpTextures);
 
-			Vector2 pos = Vector2(light->GetPosition().x + (50 * i), (50 * i));
+			Vector2 pos = Vector2(light->GetPosition().x - (50 * i), light->GetPosition().z - (50 * i));
 			s->SetTransform(Matrix4::Translation(
-				Vector3(pos.x + 50, heightMap->GetHeightForPosition(pos), pos.y)));
+				Vector3(pos.x, heightMap->GetHeightForPosition(pos), pos.y)));
 			s->SetModelScale(Vector3(10, 10, 10));
 			
 			root->AddChild(s);
@@ -628,26 +672,30 @@ void Renderer::CreateTrees()
 		GLuint texID = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
 			SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
 		bumpTextures->emplace_back(0);
-		bumpTextures->emplace_back(texID);
+		path = TEXTUREDIR"Coconut Palm Tree Pack/Textures/Coconut_Palm_Tree_normalspec.psd";
+		GLuint texID2 = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
+			SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
+		bumpTextures->emplace_back(0);
 
-		for (int i = 0; i < 10; i++) {
+		for (int i = 0; i < 1; i++) {
 			SceneNode* s = new SceneNode();
 			s->SetMesh(mesh);
 			s->SetMeshMaterial(material);
-			s->SetShader(shader);
-			s->SetBoundingRadius(45.0f);
+			s->SetShader(instancedShader);
+			s->SetBoundingRadius(60.0f);
 			s->SetTextures(matTextures);
 			s->SetBumpTextures(bumpTextures);
 			s->SetColour(Vector4(1, 1, 1, 0.9));
-			/*s->SetTransform(Matrix4::Translation(
-				Vector3(100 * i, 25, 100 * i + (i*20))));*/
-			Vector2 pos = Vector2((50 * i), light->GetPosition().z + (50 * i));
+
+			Vector2 pos = Vector2(light->GetPosition().x, light->GetPosition().z);
 			s->SetTransform(Matrix4::Translation(
-				Vector3(pos.x - 50, heightMap->GetHeightForPosition(pos),pos.y)));
-			s->SetModelScale(Vector3(10, 10, 10));
+				Vector3(pos.x, heightMap->GetHeightForPosition(pos),pos.y)));
+			s->SetModelScale(Vector3(10,10,10));
+			s->SetIsInstanced(true);
 
 			root->AddChild(s);
 		}
+	
 	}
 }
 
@@ -722,3 +770,41 @@ vector<GLuint>* Renderer::GetBumpsForMesh(string obj)
 	}
 	return bumpTextures;
 }
+
+/*void Renderer::DrawPostProcess()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, processFBO);
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+		GL_TEXTURE_2D, bufferColourTex[1], 0);
+	glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
+
+	BindShader(processShader);
+	modelMatrix.ToIdentity();
+	viewMatrix.ToIdentity();
+	projMatrix.ToIdentity();
+	UpdateShaderMatrices();
+
+	glDisable(GL_DEPTH_TEST);
+
+	glActiveTexture(GL_TEXTURE0);
+	glUniform1i(glGetUniformLocation(
+		processShader->GetProgram(), "sceneTex"), 0);
+	for (int i = 0; i < POST_PASSES; ++i) {
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+			GL_TEXTURE_2D, bufferColourTex[1], 0);
+		glUniform1i(glGetUniformLocation(processShader->GetProgram(),
+			"isVertical"), 0);
+		glBindTexture(GL_TEXTURE_2D, bufferColourTex[0]);
+		quad->Draw();
+		// Now to swap the colour buffers , and do the second blur pass
+		glUniform1i(glGetUniformLocation(processShader->GetProgram(),
+			"isVertical"), 1);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+			GL_TEXTURE_2D, bufferColourTex[0], 0);
+		glBindTexture(GL_TEXTURE_2D, bufferColourTex[1]);
+		quad->Draw();
+
+	}
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glEnable(GL_DEPTH_TEST);
+}*/

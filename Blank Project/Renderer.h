@@ -47,6 +47,7 @@ public:
 	vector<GLuint>* GetTexturesForMesh(string obj);
 	vector<GLuint>* GetBumpsForMesh(string obj);
 	void DrawScene(bool drawWater);
+	void DrawPostProcess();
 
 	static float Lerp(float a, float b, float t) {
 		return (a * t) + (b * (1.0f - t));
@@ -70,6 +71,7 @@ protected:
 	Shader* shadowShader;
 	Shader* waterShader;
 	Shader* animationShader;
+	Shader* instancedShader;
 	Camera* camera;
 	GLuint terrainTexs[3];
 	GLuint terrainBumps[3];
@@ -101,6 +103,9 @@ protected:
 	vector<Waypoint> waypoints;
 	int waypointsCleared = 0;
 	float waypointWaitTime = 10.0f;
+
+	GLuint uniformBuffer;
+	GLuint processFBO;
 
 	vector<SceneNode*> transparentNodeList;
 	vector<SceneNode*> nodeList;

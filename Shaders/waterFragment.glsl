@@ -53,21 +53,24 @@ void main(void) {
   // Get value from refract depth buffer
   float depth = texture(depthTex, vec2(texCoord.x, texCoord.y)).r;
   // Calculate distance between camera and terrain under the water
+  // Found this conver
   float floorDistance = 2.0 * near * far / (far + near - (2.0 * depth - 1.0) * (far - near));
   float waterDistance = 2.0 * near * far / (far + near - (2.0 * gl_FragCoord.z - 1.0) * (far - near));
   float waterDepth = floorDistance - waterDistance;
   // Sampling twice for distortion in both x and y.
   // Doing it this way makes sampling from the bump map easier
-  vec2 distort = texture(dudvTex, vec2(IN.texCoord.x + waterMove, IN.texCoord.y)).rg * 0.1; // Only care about red and gree for distortion
+  vec2 distort = texture(dudvTex, vec2(IN.texCoord.x + waterMove, IN.texCoord.y)).rg * 0.1; // Only care about red and green for distortion
   distort = IN.texCoord + vec2(distort.x, distort.y + waterMove);
   vec2 dudv = (texture(dudvTex, distort).rg * 2.0 - 1.0) * waveStrength; 
   vec2 reflectCoord = vec2(texCoord.x,-texCoord.y) + dudv;
-  //reflectCoord.x = clamp(reflectCoord.x, 0.001, 0.999);
- // reflectCoord.y = clamp(reflectCoord.y, -0.999, -0.001);
+  // Clamping to stop edges of screen looking strange when the camera is observing the water
+  reflectCoord.x = clamp(reflectCoord.x, 0.001, 0.999);
+  reflectCoord.y = clamp(reflectCoord.y, -0.999, -0.001);
 
   vec2 refractCoord = vec2(texCoord.x, texCoord.y) + dudv;
-  //refractCoord = clamp(refractCoord, 0.001, 0.999);
+  refractCoord = clamp(refractCoord, 0.001, 0.999);
 
+  // Can't get more complex lighting to work at the moment
   /* mat3 TBN = mat3 ( normalize ( IN.tangent ), 
        normalize ( IN.binormal ) , normalize( IN.normal ));
  // vec3 bumpNormal = texture ( bumpTex , IN.texCoord ).rgb;
@@ -87,8 +90,8 @@ void main(void) {
  vec3 bumpNormal = normalize(vec3(normalMapColour.r * 2.0 - 1.0, normalMapColour.b * 3.0, normalMapColour.g * 2.0 -1.0));
  vec3 reflectDir = reflect ( -viewDir , normalize ( IN.normal));
 
- vec3 fromLight = IN.worldPos.xyz - lightPos;
- vec3 reflectedLight = reflect(normalize(fromLight), bumpNormal);
+ vec3 lightDir = IN.worldPos.xyz - lightPos;
+ vec3 reflectedLight = reflect(normalize(lightDir), bumpNormal);
  float specular = max(dot(reflectedLight, viewDir), 0.0);
  specular = pow(specular, 30.0);
  vec3 specularHighlights = lightColour.rgb * specular * 0.6;
@@ -110,7 +113,7 @@ void main(void) {
  fragColour.rgb +=  ( lightColour.rgb * specFactor )* attenuation *0.33;
  fragColour.rgb += surface * 0.1f;
  fragColour.a = texColour.a;*/
-// fragColour.a = clamp(waterDepth / 5.0, 0.0, 1.0);
+ fragColour.a = clamp(waterDepth / 10.0, 0.0, 1.0); // Water should be transparent at low depths
 //  fragColour = reflectColour;
 
 }

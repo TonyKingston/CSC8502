@@ -6,7 +6,7 @@ class Light
 {
 public:
 
-	enum LightType { POINT, SPOT, DIRECTIONAL, NONE};
+	enum LightType { POINT, SPOT, DIRECTIONAL, NONE };
 
 	Light() {} // Default constructor , we ’ll be needing this later !
 
@@ -28,11 +28,11 @@ public:
 		this->position = position;
 		this->radius = radius;
 	}
-	
+
 	~Light(void) {};
 
 	Vector4 GetColour() const { return colour; }
-	void SetColour(const Vector4 & val) { colour = val; }
+	void SetColour(const Vector4& val) { colour = val; }
 
 	Vector3 GetDirection() const { return direction; }
 	void SetDirection(const Vector3& val) { direction = val; }
@@ -51,6 +51,12 @@ public:
 
 	float GetQuadraticCoefficient() { return quadratic; }
 	void SetQuadraticCoefficient(float val) { quadratic = val; }
+
+	bool CastsShadow() { return castsShadow; }
+	void SetCastsShadow(bool val) { castsShadow = val; }
+
+	float GetAmbient() { return ambient; }
+	void SetAmbient(float val) { ambient = val; }
 	
 protected:
 	Vector4 colour;
@@ -58,7 +64,9 @@ protected:
 	Vector3 position;
 	float radius;
 	float maxAngle;
-	float linear;
-	float quadratic;
+	float linear = 0.0f;
+	float quadratic = 0.0f;
+	float ambient = 0.0f;
+	bool castsShadow = false;
 };
 

@@ -255,6 +255,7 @@ void OGLRenderer::SetShaderLights(vector<Light*> lights)
 		vector<float> lightAngles;
 		vector<float> lightLinear;
 		vector<float> lightQuadratic;
+		vector<float> lightAmbient;
 
 		for (auto l : lights) {
 			lightPositions.push_back(l->GetPosition());
@@ -264,8 +265,8 @@ void OGLRenderer::SetShaderLights(vector<Light*> lights)
 			lightAngles.push_back(DegToRad(l->GetAngle()));
 			lightLinear.push_back(l->GetLinearCoefficient());
 			lightQuadratic.push_back(l->GetQuadraticCoefficient());
+			lightAmbient.push_back(l->GetAmbient());
 		}
-
 		glUniform4fv(glGetUniformLocation(currentShader->GetProgram(), "lightColour"), lights.size(), (float*)lightColours.data());
 		glUniform3fv(glGetUniformLocation(currentShader->GetProgram(), "lightPos"), lights.size(), (float*)lightPositions.data());
 		glUniform1fv(glGetUniformLocation(currentShader->GetProgram(), "lightRadius"), lights.size(), lightRadii.data());
@@ -273,6 +274,8 @@ void OGLRenderer::SetShaderLights(vector<Light*> lights)
 		glUniform1fv(glGetUniformLocation(currentShader->GetProgram(), "lightAngle"), lights.size(), lightAngles.data());
 		glUniform1fv(glGetUniformLocation(currentShader->GetProgram(), "linear"), lights.size(), lightLinear.data());
 		glUniform1fv(glGetUniformLocation(currentShader->GetProgram(), "quadratic"), lights.size(), lightQuadratic.data());
+		glUniform1fv(glGetUniformLocation(currentShader->GetProgram(), "ambient"), lights.size(), lightAmbient.data());
+		glUniform1i(glGetUniformLocation(currentShader->GetProgram(), "noOfLights"), lights.size());
 	}
 	
 }

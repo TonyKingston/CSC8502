@@ -56,6 +56,12 @@ public:
 	void SetAnimation(MeshAnimation* anim) { animation = anim; }
 	MeshAnimation* GetAnimation() { return animation; }
 
+	bool UsesShadows() { return useShadows; }
+	void SetUseShadows(bool val) { useShadows = val; }
+
+	bool IsInstanced() { return isInstanced; }
+	void SetIsInstanced(bool val) { isInstanced = val; }
+
 	int GetCurrentFrame() { return currentFrame; }
 	
 	static bool CompareByCameraDistance(SceneNode * a, SceneNode * b) {
@@ -95,6 +101,7 @@ protected:
 	int currentFrame;
 	float frameTime;
 	bool useShadows = false;
+	bool isInstanced = false;
 
 };
 

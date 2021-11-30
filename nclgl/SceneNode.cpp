@@ -67,7 +67,12 @@ void SceneNode::Draw(const OGLRenderer& r)
 				glBindTexture(GL_TEXTURE_2D, (*matTextures)[i]);
 				glActiveTexture(GL_TEXTURE1);
 				glBindTexture(GL_TEXTURE_2D, (*bumpTextures)[i]);
-				mesh->DrawSubMesh(i);
+				if (isInstanced) {
+					mesh->DrawSubMeshInstanced(i, 10);
+				}
+				else {
+					mesh->DrawSubMesh(i);
+				}
 			}
 		}
 		//mesh->Draw(); 
