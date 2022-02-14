@@ -23,6 +23,7 @@ in Vertex {
  vec3 tangent; 
  vec3 binormal;
  vec3 worldPos;
+ vec3 position;
 } IN;
 
 out vec4 fragColour;
