@@ -113,7 +113,7 @@ void main(void) {
  fragColour.rgb +=  ( lightColour.rgb * specFactor )* attenuation *0.33;
  fragColour.rgb += surface * 0.1f;
  fragColour.a = texColour.a;*/
- fragColour.a = clamp(waterDepth / 10.0, 0.0, 1.0); // Water should be transparent at low depths
+ fragColour.a = clamp(waterDepth / 5.0, 0.0, 1.0); // Water should be transparent at low depths
 //  fragColour = reflectColour;
 
 }

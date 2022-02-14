@@ -22,8 +22,8 @@ SceneNode::~SceneNode(void) {
 		delete children[i];
 	}
 	//delete[] matTextures;
-//	matTextures->clear();
-	//bumpTextures->clear();
+	matTextures->clear();
+	bumpTextures->clear();
 }
 
 void SceneNode::AddChild(SceneNode* s)

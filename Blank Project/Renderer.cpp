@@ -1,4 +1,5 @@
 #include "Renderer.h"
+#include "../nclgl/CubeRobot.h"
 #include <algorithm>
 #include <cmath>
 
@@ -105,6 +106,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	materials.insert({ "skeleton", new MeshMaterial("Skeleton.mat") });
 	meshes.insert({ "golem",  Mesh::LoadFromMeshFile("Golem.msh") });
 	materials.insert({ "golem", new MeshMaterial("Golem.mat") });
+	meshes.insert({ "robot", Mesh::LoadFromMeshFile("OffsetCubeY.msh") });
 	vector<MeshAnimation*> skeletonAnims;
 	//skeletonAnims.push_back(new MeshAnimation("Skeleton.anm"));
 	skeletonAnims.push_back(new MeshAnimation("Golem.anm"));
@@ -122,6 +124,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	CreateRocks();
 	CreateGolem();
 	CreateTrees();
+	//root->AddChild(new CubeRobot(meshes.find("robot")->second));
 
 	/*auto it = root->GetChildIteratorStart();
 	Vector3 pos = (*it)->GetWorldTransform().GetPositionVector();
@@ -426,7 +429,7 @@ void Renderer::DrawWater() {
 	glUniform3fv(glGetUniformLocation(waterShader->GetProgram(),
 		"cameraPos"), 1, (float*)&camera->GetPosition());
 
-	SetShaderLight(light);
+	SetShaderLight(lights[0]);
 
 	//modelMatrix.ToIdentity();
 	quad->Draw();
@@ -576,15 +579,15 @@ void Renderer::DrawNode(SceneNode* n) {
 					"modelMatrix"), 1, false, model.values);
 		}
 		else {
-			glUniformBlockBinding(currentShader->GetProgram(), glGetUniformBlockIndex(instancedShader->GetProgram(), "Transforms"), 0);
+			glUniformBlockBinding(currentShader->GetProgram(), glGetUniformBlockIndex(currentShader->GetProgram(), "Transforms"), 0);
 			glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
 			glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
 
 			vector<Matrix4> transforms;
 			for (int i = 0; i < 10; i++) {
 				Vector2 pos = Vector2(light->GetPosition().x + (50 * 1), light->GetPosition().z + (50 * i));
-				Matrix4 transform = Matrix4::Translation(Vector3(pos.x, heightMap->GetHeightForPosition(pos), pos.y)) *
-					Matrix4::Scale(n->GetModelScale());
+				Matrix4 transform = Matrix4::Translation(Vector3(pos.x, heightMap->GetHeightForPosition(pos), pos.y)) * Matrix4::Scale(n->GetModelScale());
+				
 				transforms.push_back(transform);
 			}
 			glBufferData(GL_UNIFORM_BUFFER, 10 * sizeof(Matrix4), transforms.data(), GL_STATIC_DRAW);
@@ -665,27 +668,27 @@ void Renderer::CreateTrees()
 	auto it = materials.find("tree");
 	if (it != materials.end()) {
 		vector<GLuint>* matTextures = GetTexturesForMesh("tree");
-		vector<GLuint>* bumpTextures = new vector<GLuint>(); // The mesh extractor doesn't pick up the bump map for the tree so I have to do it manually.
+		vector<GLuint>* bumpTextures = new vector<GLuint>();
 		MeshMaterial* material = it->second;
 		Mesh* mesh = meshes.find("tree")->second;
-		string path = TEXTUREDIR"Coconut Palm Tree Pack/Textures/Coconut_Palm_Tree_normalspec_bark.psd";
+		string path = TEXTUREDIR"Coconut Palm Tree Pack/Textures/Coconut_Palm_Tree_normal.psd";
 		GLuint texID = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
 			SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
-		bumpTextures->emplace_back(0);
-		path = TEXTUREDIR"Coconut Palm Tree Pack/Textures/Coconut_Palm_Tree_normalspec.psd";
+		bumpTextures->emplace_back(texID);
+		/*path = TEXTUREDIR"Coconut Palm Tree Pack/Textures/Coconut_Palm_Tree_normalspec.psd";
 		GLuint texID2 = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
-			SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
-		bumpTextures->emplace_back(0);
+			SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);*/
+		bumpTextures->emplace_back(texID);
 
 		for (int i = 0; i < 1; i++) {
 			SceneNode* s = new SceneNode();
 			s->SetMesh(mesh);
 			s->SetMeshMaterial(material);
 			s->SetShader(instancedShader);
-			s->SetBoundingRadius(60.0f);
+			s->SetBoundingRadius(80.0f);
 			s->SetTextures(matTextures);
 			s->SetBumpTextures(bumpTextures);
-			s->SetColour(Vector4(1, 1, 1, 0.9));
+			s->SetColour(Vector4(1, 1, 1, 1));
 
 			Vector2 pos = Vector2(light->GetPosition().x, light->GetPosition().z);
 			s->SetTransform(Matrix4::Translation(

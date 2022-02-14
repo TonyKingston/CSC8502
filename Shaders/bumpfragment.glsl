@@ -31,6 +31,7 @@ void main ( void ) {
   vec3 incident;
   float attenuation;
   vec4 diffuse = texture(diffuseTex, IN.texCoord);
+  vec3 bumpNormal = texture ( bumpTex , IN.texCoord ).rgb;
   if(diffuse.a < 0.1) {
      discard;
   }
@@ -57,7 +58,6 @@ void main ( void ) {
 
     mat3 TBN = mat3 ( normalize ( IN.tangent ), 
        normalize ( IN.binormal ) , normalize( IN.normal ));
-    vec3 bumpNormal = texture ( bumpTex , IN.texCoord ).rgb;
     bumpNormal = normalize ( TBN * normalize ( bumpNormal * 2.0 - 1.0));
     float lambert = max ( dot ( incident , bumpNormal ) , 0.0f );
 
@@ -70,5 +70,7 @@ void main ( void ) {
     fragColour.rgb += surface * ambient[i];
     fragColour.a += diffuse.a;
   }
+  //bumpNormal = texture ( bumpTex , IN.texCoord ).rgb;
+ // fragColour.rgb = IN.normal;
 }
 
