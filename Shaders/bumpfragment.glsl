@@ -71,7 +71,5 @@ void main ( void ) {
     fragColour.rgb += surface * ambient[i];
     fragColour.a += diffuse.a;
   }
-  //bumpNormal = texture ( bumpTex , IN.texCoord ).rgb;
- // fragColour.rgb = IN.normal;
 }
 

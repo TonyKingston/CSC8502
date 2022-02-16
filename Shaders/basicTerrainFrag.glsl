@@ -84,6 +84,7 @@ void main(void) {
    // fragColour.rgb += surface * 0.25f; // ambient light
     fragColour.rgb += surface * ambient[i];
     fragColour.a += diffuse.a;
+
   //  fragColour = lightColour[i];
   }
 }

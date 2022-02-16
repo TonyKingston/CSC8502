@@ -69,51 +69,39 @@ void main(void) {
 
   vec2 refractCoord = vec2(texCoord.x, texCoord.y) + dudv;
   refractCoord = clamp(refractCoord, 0.001, 0.999);
-
-  // Can't get more complex lighting to work at the moment
-  /* mat3 TBN = mat3 ( normalize ( IN.tangent ), 
-       normalize ( IN.binormal ) , normalize( IN.normal ));
- // vec3 bumpNormal = texture ( bumpTex , IN.texCoord ).rgb;
-  vec4 bumpNormalColour = texture ( bumpTex , distort );
-//  bumpNormal = normalize ( TBN * normalize ( bumpNormal * 2.0 - 1.0));
-  //vec3 bumpNormal = normalize(TBN * normalize (vec3(bumpNormalColour.r * 2.0 -1.0, bumpNormalColour.b, bumpNormalColour.g * 2.0 - 1.0))); // Making the normals point up a little more
-  vec3 bumpNormal = normalize(TBN * normalize (bumpNormalColour.rgb *2.0 -1.0)); // Making the normals point up a little more
-  float lambert = max ( dot ( incident , bumpNormal ) , 0.0f );*/
- 
-  /*float specFactor = clamp ( dot ( halfDir , bumpNormal ) ,0.0 ,1.0);
-  specFactor = pow ( specFactor , 20.0);*/
  
   vec4 reflectColour = texture(reflectTex,reflectCoord);
   vec4 refractColour = texture(refractTex,refractCoord);
 
- vec4 normalMapColour = texture(bumpTex, distort);
- vec3 bumpNormal = normalize(vec3(normalMapColour.r * 2.0 - 1.0, normalMapColour.b * 3.0, normalMapColour.g * 2.0 -1.0));
- vec3 reflectDir = reflect ( -viewDir , normalize ( IN.normal));
+  //Using a simpler lighting model for the water
+  vec4 normalMapColour = texture(bumpTex, distort);
+  vec3 bumpNormal = normalize(vec3(normalMapColour.r * 2.0 - 1.0, normalMapColour.b * 3.0, normalMapColour.g * 2.0 -1.0));
+  vec3 reflectDir = reflect ( -viewDir , normalize ( IN.normal));
 
- vec3 lightDir = IN.worldPos.xyz - lightPos;
- vec3 reflectedLight = reflect(normalize(lightDir), bumpNormal);
- float specular = max(dot(reflectedLight, viewDir), 0.0);
- specular = pow(specular, 30.0);
- vec3 specularHighlights = lightColour.rgb * specular * 0.6;
+  vec3 lightDir = IN.worldPos.xyz - lightPos;
+  vec3 reflectedLight = reflect(normalize(lightDir), bumpNormal);
+  float specular = max(dot(reflectedLight, viewDir), 0.0);
+  specular = pow(specular, 30.0);
+  vec3 specularHighlights = lightColour.rgb * specular * 0.6;
 
   // Fresnel
- float refractValue = dot(viewDir, bumpNormal);
- refractValue = pow(refractValue, 2.0); // Make the water a bit more reflective
+  float refractValue = dot(viewDir, bumpNormal);
+  refractValue = pow(refractValue, 2.0); // Make the water a bit more reflective
 
- reflectColour += vec4(specularHighlights, 0.0);
+  reflectColour += vec4(specularHighlights, 0.0);
 
- //reflectColour = texture(reflectTex, reflectDir.xy);
- vec4 texColour = mix(reflectColour, refractColour, refractValue);
- vec3 surface = texColour.rgb * lightColour.rgb;
+  //reflectColour = texture(reflectTex, reflectDir.xy);
+  vec4 texColour = mix(reflectColour, refractColour, refractValue);
+  vec3 surface = texColour.rgb * lightColour.rgb;
  //texColour = mix(texColour, vec4(0,0.2,0.5,1.0), 0.2);
 
- // Add a bit of blue to the final colour
- fragColour = mix(texColour, vec4(0,0.2,0.5,1.0), 0.2) + vec4(specularHighlights, 0.0);
- /*fragColour.rgb = surface * lambert * attenuation;
- fragColour.rgb +=  ( lightColour.rgb * specFactor )* attenuation *0.33;
- fragColour.rgb += surface * 0.1f;
- fragColour.a = texColour.a;*/
- fragColour.a = clamp(waterDepth / 5.0, 0.0, 1.0); // Water should be transparent at low depths
+  // Add a bit of blue to the final colour
+  fragColour = mix(texColour, vec4(0,0.2,0.5,1.0), 0.2) + vec4(specularHighlights, 0.0);
+  /*fragColour.rgb = surface * lambert * attenuation;
+  fragColour.rgb +=  ( lightColour.rgb * specFactor )* attenuation *0.33;
+  fragColour.rgb += surface * 0.1f;
+  fragColour.a = texColour.a;*/
+  fragColour.a = clamp(waterDepth / 5.0, 0.0, 1.0); // Water should be transparent at low depths
 //  fragColour = reflectColour;
 
 }

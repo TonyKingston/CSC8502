@@ -33,11 +33,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	lights.push_back(spotLight);
 
 	// Shaders
-//	shader = new Shader("MatrixVertex.glsl", "colourFragment.glsl");
-	//shader = new Shader("TexturedVertex.glsl ", "TexturedFragment.glsl");
 	shader = new Shader("bumpvertex.glsl ", "bumpFragment.glsl");
-	//terrainShader = new Shader("TexturedVertex.glsl ", "TexturedFragment.glsl");
-	//terrainShader = new Shader("BumpVertex.glsl ", "TerrainFragment.glsl");
 	terrainShader = new Shader("basicterrainvertex.glsl ", "basicterrainfrag.glsl");
 	skyboxShader = new Shader("skyboxVertex.glsl ", "skyboxFragment.glsl");
 	sceneShader = new Shader("MatrixVertex.glsl", "colourFragment.glsl");
@@ -47,10 +43,6 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	shadowShader = new Shader("shadowvertex.glsl", "shadowfragment.glsl");
 	waterShader = new Shader("watervertex.glsl", "waterfragment.glsl");
 	instancedShader = new Shader("instancedVertex.glsl", "bumpFragment.glsl");
-	//waterShader = new Shader("TexturedVertex.glsl ", "TexturedFragment.glsl");
-
-
-	//Shader* lightShader = new Shader("bumpVertex.glsl ", "bumpFragment.glsl");
 
 	sceneShaders.push_back(shader);
 	sceneShaders.push_back(terrainShader);
@@ -61,7 +53,7 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	sceneShaders.push_back(animationShader);
 	sceneShaders.push_back(instancedShader);
 	//sceneShaders.push_back(lightShader);
-	//shader = new Shader("waterVertex.glsl", "waterFragment.glsl");
+
 	for (auto s : sceneShaders) {
 		if (!s->LoadSuccess()) {
 			return;
@@ -124,22 +116,6 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 	CreateRocks();
 	CreateGolem();
 	CreateTrees();
-	//root->AddChild(new CubeRobot(meshes.find("robot")->second));
-
-	/*auto it = root->GetChildIteratorStart();
-	Vector3 pos = (*it)->GetWorldTransform().GetPositionVector();
-	camera->SetPosition(root->GetChildIteratorStart()[0]->GetWorldTransform().GetPositionVector());*/
-	/*SceneNode* s = new SceneNode(tree, Vector4(1,1,1,0.9));
-	s->SetMeshMaterial(material);
-	//s->SetTextures(matTextures);
-	s->SetShader(shader);
-	s->SetBoundingRadius(50.0f);
-	s->SetTexture(texID);
-	s->SetModelScale(Vector3(5, 5, 5));
-	
-	root->AddChild(s);
-
-	camera->SetPosition(s->GetWorldTransform().GetPositionVector());*/
 
 	projMatrix = Matrix4::Perspective(nearPlane, farPlane,
 		(float)width / (float)height, 45.0f);
@@ -159,7 +135,6 @@ Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
 		SetTextureRepeating(tex, true);
 	//	SetTextureFiltering(tex, true);
 	}
-	//SetTextureRepeating(waterDudv, true);
 
 	clippingPlane = Plane(Vector3(0, 1, 0), -waterHeight);
 	glEnable(GL_CLIP_DISTANCE0); // Clipping plane for water
@@ -292,15 +267,6 @@ void Renderer::RenderScene() {
 	glDisable(GL_CLIP_DISTANCE0);
 	//DrawShadowScene();
 	DrawScene(true);
-	//BindShader(terrainShader);
-	
-
-	//UpdateShaderMatrices();
-	/*for (int i = 0; i < tree->GetSubMeshCount(); ++i) {
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, matTextures[i]);
-		tree->DrawSubMesh(i);
-	}*/
 	
 	ClearNodeLists();
 	if (Window::GetKeyboard()->KeyTriggered(KEYBOARD_L)) {
@@ -378,13 +344,6 @@ void Renderer::DrawWater() {
 
 	Vector3 hSize = heightMap->GetHeightmapSize();
 
-	/*modelMatrix =
-		Matrix4::Translation(hSize * 0.5f) *
-		Matrix4::Scale(hSize * 0.5f) *
-		Matrix4::Rotation(90, Vector3(1, 0, 0));*/
-
-
-	//Matrix4 model = Matrix4::Translation(Vector3(0, 0, -5)) * Matrix4::Scale(Vector3(10, 10, 10));
 	Matrix4 model = Matrix4::Translation(Vector3(hSize.x * 0.5, 25, hSize.z * 0.5)) * Matrix4::Scale(hSize * 0.5f); // Matrix4::Rotation(90, Vector3(1, 0, 0));
 //	Matrix4 model = Matrix4::Translation(Vector3(0, 25, 0)) * Matrix4::Scale(Vector3(200,200,200)) * Matrix4::Rotation(90, Vector3(0, 1, 0));
 	glUniformMatrix4fv(
@@ -616,15 +575,6 @@ void Renderer::DrawNode(SceneNode* n) {
 		
 		//SetShaderLight(light);
 		SetShaderLights(lights);
-
-		/*glUniform4fv(glGetUniformLocation(sceneShader->GetProgram(),
-			"nodeColour"), 1, (float*)&n->GetColour());
-
-		texture = n->GetTexture();
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, texture); // returns 0 if no texture
-		glUniform1i(glGetUniformLocation(sceneShader->GetProgram(), "useTexture"),
-			texture);*/
 		n->Draw(*this);
 
 	}
@@ -639,7 +589,6 @@ void Renderer::CreateRocks() {
 		vector<GLuint>* bumpTextures = GetBumpsForMesh("rock");
 
 		for (int i = 0; i < 10; i++) {
-			//SceneNode* s = new SceneNode(treeMesh, Vector4(1, 1, 1, 0.9));
 			SceneNode* s = new SceneNode();
 			s->SetMesh(mesh);
 			s->SetMeshMaterial(material);
@@ -655,7 +604,6 @@ void Renderer::CreateRocks() {
 			
 			root->AddChild(s);
 		}
-	//	textureMatrix.ToIdentity();
 	}
 	else {
 		return;
@@ -675,9 +623,7 @@ void Renderer::CreateTrees()
 		GLuint texID = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
 			SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);
 		bumpTextures->emplace_back(texID);
-		/*path = TEXTUREDIR"Coconut Palm Tree Pack/Textures/Coconut_Palm_Tree_normalspec.psd";
-		GLuint texID2 = SOIL_load_OGL_texture(path.c_str(), SOIL_LOAD_AUTO,
-			SOIL_CREATE_NEW_ID, SOIL_FLAG_MIPMAPS | SOIL_FLAG_INVERT_Y);*/
+
 		bumpTextures->emplace_back(texID);
 
 		for (int i = 0; i < 1; i++) {
@@ -715,7 +661,7 @@ void Renderer::CreateGolem()
 	s->SetTextures(matTextures);
 	s->SetBumpTextures(bumpTextures);
 	Vector2 pos = Vector2(2200, 1414);
-	//Vector2 pos = Vector2(light->GetPosition().x, light->GetPosition().z);
+
 	s->SetTransform(Matrix4::Translation(
 		Vector3(pos.x, heightMap->GetHeightForPosition(pos), pos.y)) * Matrix4::Rotation(20, Vector3(0, 1, 0)));
 	s->SetAnimation(animations.find("golem")->second[0]);
