@@ -8,7 +8,6 @@ SceneNode::SceneNode(Mesh* mesh, Vector4 colour) {
 	shader = NULL;
 	material = NULL;
 	animation = NULL;
-	//matTextures = vector<GLuint>(0);
 	modelScale = Vector3(1, 1, 1);
 	boundingRadius = 1.0f;
 	distanceFromCamera = 0.0f;
@@ -21,7 +20,6 @@ SceneNode::~SceneNode(void) {
 	for (unsigned int i = 0; i < children.size(); ++i) {
 		delete children[i];
 	}
-	//delete[] matTextures;
 	matTextures->clear();
 	bumpTextures->clear();
 }

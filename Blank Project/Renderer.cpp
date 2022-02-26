@@ -9,6 +9,13 @@ const float nearPlane = 1.0f;
 const float farPlane = 15000.0f;
 #define SHADOWSIZE 2048
 
+template <typename M> void DeleteMap(M& map) {
+	for (typename M::iterator it = map.begin(); it != map.end(); ++it) {
+		delete it->second;
+	}
+	map.clear();
+}
+
 Renderer::Renderer(Window& parent) : OGLRenderer(parent) {
     //triangle = Mesh::GenerateTriangle();
 	heightMap = new HeightMap(TEXTUREDIR"islandSmall.png");
@@ -195,12 +202,9 @@ Renderer::~Renderer(void) {
 		delete shader;
 	for (auto l : lights)
 		delete l;
-	for (auto it = meshes.begin(); it != meshes.end(); it++) {
-		delete it->second;
-	}
-	for (auto it = materials.begin(); it != materials.end(); it++) {
-		delete it->second;
-	}
+	DeleteMap(meshes);
+	DeleteMap(materials);
+
 	for (auto it = animations.begin(); it != animations.end(); it++) {
 		for (auto anim : it->second) {
 			delete anim;
@@ -634,7 +638,7 @@ void Renderer::CreateTrees()
 			s->SetBoundingRadius(80.0f);
 			s->SetTextures(matTextures);
 			s->SetBumpTextures(bumpTextures);
-			s->SetColour(Vector4(1, 1, 1, 1));
+			s->SetColour(Vector4(1, 1, 1, 0.9));
 
 			Vector2 pos = Vector2(light->GetPosition().x, light->GetPosition().z);
 			s->SetTransform(Matrix4::Translation(

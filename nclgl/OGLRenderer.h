@@ -73,7 +73,6 @@ protected:
 
 	void SetTextureRepeating(GLuint target, bool state);
 	void SetTextureFiltering(GLuint target, bool state);
-	//void SetShaderLight(const Light& l);
 	void SetShaderLight(Light* l);
 	void SetShaderLights(vector<Light*> lights);
 
